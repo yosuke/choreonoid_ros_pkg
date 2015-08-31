@@ -1,0 +1,20 @@
+# -*- mode: makefile -*-
+GIT_DIR = build/choreonoid-master
+GIT_URL = https://github.com/s-nakaoka/choreonoid.git
+GIT_REVISION = master
+
+MK_DIR = $(shell rospack find mk)
+include $(MK_DIR)/git_checkout.mk
+
+installed.choreonoid: $(GIT_DIR)
+	@echo "compile choreonoid ... "
+	@echo "                 PATH=$(PATH)"
+	@echo "                 INSTALL_DIR=$(INSTALL_DIR)"
+	@echo "                 GIT_DIR=$(GIT_DIR)"
+	cd $(GIT_DIR) && cmake . -DCMAKE_INSTALL_PREFIX=$(INSTALL_DIR) -DENABLE_INSTALL_RPATH=ON && make -j 4 && make install
+	touch installed.choreonoid
+
+clean.choreonoid:
+	-cd $(GIT_DIR) && make clean
+	rm -fr installed.choreonoid
+
