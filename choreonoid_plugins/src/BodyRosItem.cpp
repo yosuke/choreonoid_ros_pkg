@@ -158,9 +158,11 @@ void BodyRosItem::callback(const trajectory_msgs::JointTrajectory::ConstPtr& msg
   points_.resize(point_size);
   for (unsigned int i = 0; i < point_size; ++i) {
     points_[i].positions.resize(joint_size);
-    for (unsigned int j = 0; j < point_size; ++j) {
+    for (unsigned int j = 0; j < joint_size; ++j) {
       points_[i].positions[j] = msg->points[i].positions[j];
     }
+    points_[i].time_from_start.sec = msg->points[i].time_from_start.sec;
+    points_[i].time_from_start.nsec = msg->points[i].time_from_start.nsec;
   }
   trajectory_start_ = ros::Time(msg->header.stamp.sec,
                                 msg->header.stamp.nsec).toSec();
