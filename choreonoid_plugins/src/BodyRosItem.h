@@ -48,8 +48,6 @@ public:
     void setModuleName(const std::string& name);
 
 protected:
-    virtual void onPositionChanged();
-    //virtual void onDisconnectedFromRoot();
     virtual ItemPtr doDuplicate() const;
         
 private:

@@ -25,11 +25,6 @@ BodyRosItem::BodyRosItem()
 {
   controllerTarget = NULL;
   has_trajectory_ = false;
-  // TODO: We need to change (remap?) bodyName when this item is moved
-  // in choreonoid item tree to create clean namespace for each robot
-  rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(bodyName));
-  joint_state_publisher_ = rosnode_->advertise<sensor_msgs::JointState>("joint_states", 1000);
-  joint_state_subscriber_ = rosnode_->subscribe("set_joint_trajectory", 1000, &BodyRosItem::callback, this);
 }
 
 BodyRosItem::BodyRosItem(const BodyRosItem& org)
@@ -38,14 +33,10 @@ BodyRosItem::BodyRosItem(const BodyRosItem& org)
 {
   controllerTarget = NULL;
   has_trajectory_ = false;
-  rosnode_ = org.rosnode_;
-  joint_state_publisher_ = org.joint_state_publisher_;
-  joint_state_subscriber_ = org.joint_state_subscriber_;
 }
 
 BodyRosItem::~BodyRosItem()
 {
-  rosnode_->shutdown();
 }
 
 ItemPtr BodyRosItem::doDuplicate() const
@@ -59,6 +50,14 @@ bool BodyRosItem::start(Target* target)
   simulationBody = target->body();
   timeStep_ = target->worldTimeStep();
   controlTime_ = target->currentTime();
+  for (int i = 0; i < simulationBody->numJoints(); i++) {
+    Link* joint = simulationBody->joint(i);
+    joint_number_map_[joint->name()] = i;
+  }
+  rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(simulationBody->name()));
+  joint_state_publisher_ = rosnode_->advertise<sensor_msgs::JointState>("joint_states", 1000);
+  joint_state_subscriber_ = rosnode_->subscribe("set_joint_trajectory", 1000, &BodyRosItem::callback, this);
+  createSensors(simulationBody);
   
   return true;
 }
@@ -143,7 +142,7 @@ void BodyRosItem::output()
 
 void BodyRosItem::stop()
 {
-  
+  rosnode_->shutdown();
 }
 
 void BodyRosItem::callback(const trajectory_msgs::JointTrajectory::ConstPtr& msg)
@@ -161,8 +160,8 @@ void BodyRosItem::callback(const trajectory_msgs::JointTrajectory::ConstPtr& msg
     for (unsigned int j = 0; j < joint_size; ++j) {
       points_[i].positions[j] = msg->points[i].positions[j];
     }
-    points_[i].time_from_start.sec = msg->points[i].time_from_start.sec;
-    points_[i].time_from_start.nsec = msg->points[i].time_from_start.nsec;
+    points_[i].time_from_start = ros::Duration(msg->points[i].time_from_start.sec,
+                                               msg->points[i].time_from_start.nsec);
   }
   trajectory_start_ = ros::Time(msg->header.stamp.sec,
                                 msg->header.stamp.nsec).toSec();
@@ -170,21 +169,4 @@ void BodyRosItem::callback(const trajectory_msgs::JointTrajectory::ConstPtr& msg
     trajectory_start_ = controlTime_;
   trajectory_index_ = 0;
   has_trajectory_ = true;
-}
-
-void BodyRosItem::onPositionChanged() {
-  BodyItem* ownerBodyItem = findOwnerItem<BodyItem>();
-  if (ownerBodyItem) {
-    BodyPtr body = ownerBodyItem->body();
-    createSensors(body);
-    if (bodyName != body->name()) {
-      bodyName = body->name();
-    }
-    for (int i = 0; i < body->numJoints(); i++) {
-      Link* joint = body->joint(i);
-      joint_number_map_[joint->name()] = i;
-    }
-  } else {
-    bodyName.clear();
-  }
 }

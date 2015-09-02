@@ -42,8 +42,8 @@ $ ./devel/bin/choreonoid
 Configure AISTSimulator item to use High-gain dynamics mode.
 Create and place BodyRos item under the robot you want to control.
 
-Each joint states are published to /joint\_states topic.
-Your control signal can be sent using /set\_joint\_trajectory topic.
+Each joint states are published to /[robotname]/joint\_states topic.
+Your control signal can be sent using /[robotname]/set\_joint\_trajectory topic.
 
 
 Note
