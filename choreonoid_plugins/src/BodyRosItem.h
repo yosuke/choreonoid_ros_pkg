@@ -4,6 +4,7 @@
 #include <cnoid/ControllerItem>
 #include <cnoid/BasicSensorSimulationHelper>
 #include <cnoid/Body>
+#include <cnoid/VisionSensor>
 #include "exportdecl.h"
 
 #include <ros/ros.h>
@@ -12,6 +13,7 @@
 #include <geometry_msgs/Wrench.h>
 #include <geometry_msgs/Accel.h>
 #include <trajectory_msgs/JointTrajectory.h>
+#include <image_transport/image_transport.h>
 
 #include <vector>
 
@@ -42,6 +44,7 @@ public:
     const DeviceList<ForceSensor>& forceSensors() const { return forceSensors_; }
     const DeviceList<RateGyroSensor>& gyroSensors() const { return gyroSensors_; }
     const DeviceList<AccelSensor>& accelSensors() const { return accelSensors_; }
+    const DeviceList<VisionSensor>& visionSensors() const { return visionSensors_; }
     
     double controlTime() const { return controlTime_; }
     
@@ -55,6 +58,7 @@ private:
     DeviceList<ForceSensor> forceSensors_;
     DeviceList<RateGyroSensor> gyroSensors_;
     DeviceList<AccelSensor> accelSensors_;
+    DeviceList<VisionSensor> visionSensors_;
     double timeStep_;
 
     const Target* controllerTarget;
@@ -78,6 +82,7 @@ private:
     std::vector<ros::Publisher> force_sensor_publishers_;
     std::vector<ros::Publisher> rate_gyro_sensor_publishers_;
     std::vector<ros::Publisher> accel_sensor_publishers_;
+    std::vector<image_transport::Publisher> vision_sensor_publishers_;
 };
 
 typedef ref_ptr<BodyRosItem> BodyRosItemPtr;

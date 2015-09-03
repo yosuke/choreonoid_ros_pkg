@@ -66,27 +66,35 @@ bool BodyRosItem::start(Target* target)
 
 bool BodyRosItem::createSensors(BodyPtr body)
 {
-  const DeviceList<Sensor> sensors(body->devices());
+  const DeviceList<Device> sensors(body->devices());
   sensors.makeIdMap(forceSensors_);
   sensors.makeIdMap(gyroSensors_);
   sensors.makeIdMap(accelSensors_);
+  sensors.makeIdMap(visionSensors_);
   
   force_sensor_publishers_.resize(forceSensors_.size());
   for (size_t i=0; i < forceSensors_.size(); ++i) {
-    if (Sensor* sensor = forceSensors_.get(i)) {
+    if (Device* sensor = forceSensors_.get(i)) {
       force_sensor_publishers_[i] = rosnode_->advertise<geometry_msgs::Wrench>(sensor->name(), 1);
     }
   }
   rate_gyro_sensor_publishers_.resize(gyroSensors_.size());
   for (size_t i=0; i < gyroSensors_.size(); ++i) {
-    if (Sensor* sensor = gyroSensors_.get(i)) {
+    if (Device* sensor = gyroSensors_.get(i)) {
       rate_gyro_sensor_publishers_[i] = rosnode_->advertise<sensor_msgs::Imu>(sensor->name(), 1);
     }
   }
   accel_sensor_publishers_.resize(accelSensors_.size());
   for (size_t i=0; i < accelSensors_.size(); ++i) {
-    if (Sensor* sensor = accelSensors_.get(i)) {
+    if (Device* sensor = accelSensors_.get(i)) {
       accel_sensor_publishers_[i] = rosnode_->advertise<geometry_msgs::Accel>(sensor->name(), 1);
+    }
+  }
+  image_transport::ImageTransport it(*rosnode_);
+  vision_sensor_publishers_.resize(visionSensors_.size());
+  for (size_t i=0; i < visionSensors_.size(); ++i) {
+    if (Device* sensor = visionSensors_.get(i)) {
+      vision_sensor_publishers_[i] = it.advertise(sensor->name(), 1);
     }
   }
 }
