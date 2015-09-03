@@ -5,11 +5,14 @@
 #include <cnoid/BasicSensorSimulationHelper>
 #include <cnoid/Body>
 #include <cnoid/VisionSensor>
+#include <cnoid/Camera>
 #include "exportdecl.h"
 
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/image_encodings.h>
 #include <geometry_msgs/Wrench.h>
 #include <geometry_msgs/Accel.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -44,7 +47,7 @@ public:
     const DeviceList<ForceSensor>& forceSensors() const { return forceSensors_; }
     const DeviceList<RateGyroSensor>& gyroSensors() const { return gyroSensors_; }
     const DeviceList<AccelSensor>& accelSensors() const { return accelSensors_; }
-    const DeviceList<VisionSensor>& visionSensors() const { return visionSensors_; }
+    const DeviceList<Camera>& visionSensors() const { return visionSensors_; }
     
     double controlTime() const { return controlTime_; }
     
@@ -58,7 +61,7 @@ private:
     DeviceList<ForceSensor> forceSensors_;
     DeviceList<RateGyroSensor> gyroSensors_;
     DeviceList<AccelSensor> accelSensors_;
-    DeviceList<VisionSensor> visionSensors_;
+    DeviceList<Camera> visionSensors_;
     double timeStep_;
 
     const Target* controllerTarget;

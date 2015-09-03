@@ -174,6 +174,27 @@ void BodyRosItem::input()
       accel_sensor_publishers_[i].publish(accel);
     }
   }
+  for (size_t i=0; i < visionSensors_.size(); ++i) {
+    if (Camera* sensor = visionSensors_.get(i)) {
+      sensor_msgs::Image vision;
+      vision.header.stamp.fromSec(inputTime);
+      vision.height = sensor->image().height();
+      vision.width = sensor->image().width();
+      if (sensor->image().numComponents() == 3)
+        vision.encoding = sensor_msgs::image_encodings::RGB8;
+      else if (sensor->image().numComponents() == 1)
+        vision.encoding = sensor_msgs::image_encodings::MONO8;
+      else {
+        ROS_INFO("unsupported image component number: %i", sensor->image().numComponents());
+      }
+      vision.is_bigendian = 0;
+      vision.step = sensor->image().width() * sensor->image().numComponents();
+      vision.data.resize(vision.step * vision.height);
+      for (size_t j = 0; j < vision.step * vision.height; ++j)
+        vision.data[j] = sensor->image().pixels()[j];
+      vision_sensor_publishers_[i].publish(vision);
+    }
+  }
 }
 
 void BodyRosItem::output()
