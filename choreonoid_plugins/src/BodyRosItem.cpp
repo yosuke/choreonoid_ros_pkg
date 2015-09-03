@@ -54,7 +54,9 @@ bool BodyRosItem::start(Target* target)
     Link* joint = simulationBody->joint(i);
     joint_number_map_[joint->name()] = i;
   }
-  rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(simulationBody->name()));
+  std::string name = simulationBody->name();
+  std::replace(name.begin(), name.end(), '-', '_');
+  rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(name));
   joint_state_publisher_ = rosnode_->advertise<sensor_msgs::JointState>("joint_states", 1000);
   joint_state_subscriber_ = rosnode_->subscribe("set_joint_trajectory", 1000, &BodyRosItem::callback, this);
   createSensors(simulationBody);
@@ -132,7 +134,38 @@ bool BodyRosItem::control()
 
 void BodyRosItem::input()
 {
-  // TODO: add code to publish sensor info
+  double inputTime = controllerTarget->currentTime();
+  for (size_t i=0; i < forceSensors_.size(); ++i) {
+    if (ForceSensor* sensor = forceSensors_.get(i)) {
+      geometry_msgs::Wrench force;
+      force.force.x = sensor->F()[0];
+      force.force.y = sensor->F()[1];
+      force.force.z = sensor->F()[2];
+      force.torque.x = sensor->F()[3];
+      force.torque.y = sensor->F()[4];
+      force.torque.z = sensor->F()[5];
+      force_sensor_publishers_[i].publish(force);
+    }
+  }
+  for (size_t i=0; i < gyroSensors_.size(); ++i) {
+    if (RateGyroSensor* sensor = gyroSensors_.get(i)) {
+      sensor_msgs::Imu gyro;
+      gyro.header.stamp.fromSec(inputTime);
+      gyro.angular_velocity.x = sensor->w()[0];
+      gyro.angular_velocity.y = sensor->w()[1];
+      gyro.angular_velocity.z = sensor->w()[2];
+      rate_gyro_sensor_publishers_[i].publish(gyro);
+    }
+  }
+  for (size_t i=0; i < accelSensors_.size(); ++i) {
+    if (AccelSensor* sensor = accelSensors_.get(i)) {
+      geometry_msgs::Accel accel;
+      accel.linear.x = sensor->dv()[0];
+      accel.linear.y = sensor->dv()[1];
+      accel.linear.z = sensor->dv()[2];
+      accel_sensor_publishers_[i].publish(accel);
+    }
+  }
 }
 
 void BodyRosItem::output()
