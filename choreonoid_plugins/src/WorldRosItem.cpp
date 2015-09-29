@@ -5,6 +5,7 @@
 #include <cnoid/Sensor>
 #include <cnoid/ItemManager>
 #include <cnoid/MessageView>
+#include <cnoid/ItemTreeView>
 
 using namespace cnoid;
 
@@ -23,16 +24,16 @@ void WorldRosItem::initialize(ExtensionManager* ext) {
 
 WorldRosItem::WorldRosItem()
 {
-  RootItem::mainInstance()->sigTreeChanged().connect(
-                                                     boost::bind(&WorldRosItem::start, this));
+  RootItem::instance()->sigTreeChanged().connect(
+                                                 boost::bind(&WorldRosItem::start, this));
   start();
 }
 
 WorldRosItem::WorldRosItem(const WorldRosItem& org)
   : Item(org)
 {
-  RootItem::mainInstance()->sigTreeChanged().connect(
-                                                     boost::bind(&WorldRosItem::start, this));
+  RootItem::instance()->sigTreeChanged().connect(
+                                                 boost::bind(&WorldRosItem::start, this));
   start();
 }
 
@@ -48,15 +49,17 @@ ItemPtr WorldRosItem::doDuplicate() const
 
 void WorldRosItem::start()
 {
-  std::cout << "called start" << std::endl;
+  static bool initialized = false;
+  if (initialized) return;
+  
   world = this->findOwnerItem<WorldItem>();
   if (world)
-    std::cout << "found world " << world->name() << std::endl;
+    ROS_INFO("Found WorldItem: %s", world->name().c_str());
   sim = SimulatorItem::findActiveSimulatorItemFor(this);
   if (sim == 0) return;
   
   std::string name = sim->name();
-  std::cout << "found sim " << name << std::endl;
+  ROS_INFO("Found SimulatorItem: %s", name.c_str());
   std::replace(name.begin(), name.end(), '-', '_');
   rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(name));
 
@@ -104,6 +107,8 @@ void WorldRosItem::start()
   async_ros_spin_->start();
 
   rosqueue_thread_.reset(new boost::thread(&WorldRosItem::queueThread, this));
+
+  initialized = true;
 }
 
 void WorldRosItem::queueThread()
@@ -149,6 +154,7 @@ bool WorldRosItem::spawnVRMLModel(gazebo_msgs::SpawnModel::Request &req,
   R.z() = req.initial_pose.orientation.z;
 
   BodyItemPtr body = new BodyItem();
+  body->setName(req.model_name);
   
   const char *fname = tmpnam(NULL);
   std::ofstream ofs(fname);
@@ -156,10 +162,12 @@ bool WorldRosItem::spawnVRMLModel(gazebo_msgs::SpawnModel::Request &req,
   ofs.close();
   body->loadModelFile(fname);
   remove(fname);
-
+  
   body->body()->rootLink()->setTranslation(trans);
   body->body()->rootLink()->setRotation(R.matrix());
   world->addChildItem(body);
+
+  ItemTreeView::instance()->checkItem(body);
   
   return true;
 }
