@@ -5,6 +5,7 @@
 #include <cnoid/Body>
 #include <cnoid/WorldItem>
 #include <cnoid/SimulatorItem>
+#include <cnoid/TimeBar>
 #include "exportdecl.h"
 
 #include <ros/ros.h>
@@ -12,6 +13,9 @@
 #include <ros/subscribe_options.h>
 #include <geometry_msgs/Wrench.h>
 #include <std_srvs/Empty.h>
+#include <rosgraph_msgs/Clock.h>
+#include <gazebo_msgs/LinkStates.h>
+#include <gazebo_msgs/ModelStates.h>
 #include <gazebo_msgs/SpawnModel.h>
 #include <gazebo_msgs/DeleteModel.h>
 
@@ -45,6 +49,10 @@ private:
     ros::CallbackQueue rosqueue_;
     boost::shared_ptr<boost::thread> rosqueue_thread_;
 
+    bool timeTick(double);
+    void publishSimTime();
+    void publishLinkStates();
+    void publishModelStates();
     void queueThread();
     bool resetSimulation(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
     bool pausePhysics(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
@@ -52,7 +60,9 @@ private:
     bool spawnVRMLModel(gazebo_msgs::SpawnModel::Request &req, gazebo_msgs::SpawnModel::Response &res);
     bool deleteModel(gazebo_msgs::DeleteModel::Request &req, gazebo_msgs::DeleteModel::Response &res);
 
-    
+    ros::Publisher     pub_clock_;
+    ros::Publisher     pub_link_states_;
+    ros::Publisher     pub_model_states_;
     ros::ServiceServer reset_simulation_service_;
     ros::ServiceServer reset_world_service_;
     ros::ServiceServer pause_physics_service_;

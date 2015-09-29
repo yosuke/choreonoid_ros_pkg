@@ -63,6 +63,12 @@ void WorldRosItem::start()
   std::replace(name.begin(), name.end(), '-', '_');
   rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(name));
 
+  pub_clock_ = rosnode_->advertise<rosgraph_msgs::Clock>("/clock", 10);
+  pub_link_states_ = rosnode_->advertise<gazebo_msgs::LinkStates>("link_states", 10);
+  pub_model_states_ = rosnode_->advertise<gazebo_msgs::ModelStates>("model_states", 10);
+  TimeBar* timeBar = TimeBar::instance();
+  timeBar->sigTimeChanged().connect(boost::bind(&WorldRosItem::timeTick, this, _1));
+  
   std::string pause_physics_service_name("pause_physics");
   ros::AdvertiseServiceOptions pause_physics_aso =
     ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
@@ -109,6 +115,95 @@ void WorldRosItem::start()
   rosqueue_thread_.reset(new boost::thread(&WorldRosItem::queueThread, this));
 
   initialized = true;
+}
+
+bool WorldRosItem::timeTick(double t)
+{
+  publishSimTime();
+  publishLinkStates();
+  publishModelStates();
+  return true;
+}
+
+void WorldRosItem::publishSimTime()
+{
+  rosgraph_msgs::Clock ros_time_;
+  ros_time_.clock.fromSec(sim->currentTime());
+  pub_clock_.publish(ros_time_);
+}
+
+void WorldRosItem::publishLinkStates()
+{
+  gazebo_msgs::LinkStates link_states;
+
+  Item* item = world->childItem();
+  while(item) {
+    BodyItem* body = boost::dynamic_pointer_cast<BodyItem>(item);
+    if (body) {
+      for (int i = 0; i < body->body()->numLinks(); i++) {
+        Link* link = body->body()->link(i);
+        link_states.name.push_back(body->name() + "::" + link->name());
+        Vector3 pos = link->translation();
+        Quat rot = Quat(link->rotation());
+        geometry_msgs::Pose pose;
+        pose.position.x = pos(0);
+        pose.position.y = pos(1);
+        pose.position.z = pos(2);
+        pose.orientation.w = rot.w();
+        pose.orientation.x = rot.x();
+        pose.orientation.y = rot.y();
+        pose.orientation.z = rot.z();
+        link_states.pose.push_back(pose);
+        /*
+        twist.linear.x = linear_vel.x;
+        twist.linear.y = linear_vel.y;
+        twist.linear.z = linear_vel.z;
+        twist.angular.x = angular_vel.x;
+        twist.angular.y = angular_vel.y;
+        twist.angular.z = angular_vel.z;
+        link_states.twist.push_back(twist);
+        */
+      }
+    }
+    item = item->nextItem();
+  }
+  pub_link_states_.publish(link_states);
+}
+
+void WorldRosItem::publishModelStates()
+{
+  gazebo_msgs::ModelStates model_states;
+
+  Item* item = world->childItem();
+  while(item) {
+    BodyItem* body = boost::dynamic_pointer_cast<BodyItem>(item);
+    if (body) {
+      model_states.name.push_back(body->name());
+      Link* link = body->body()->rootLink();
+      Vector3 pos = link->translation();
+      Quat rot = Quat(link->rotation());
+      geometry_msgs::Pose pose;
+      pose.position.x = pos(0);
+      pose.position.y = pos(1);
+      pose.position.z = pos(2);
+      pose.orientation.w = rot.w();
+      pose.orientation.x = rot.x();
+      pose.orientation.y = rot.y();
+      pose.orientation.z = rot.z();
+      model_states.pose.push_back(pose);
+      /*
+      twist.linear.x = linear_vel.x;
+      twist.linear.y = linear_vel.y;
+      twist.linear.z = linear_vel.z;
+      twist.angular.x = angular_vel.x;
+      twist.angular.y = angular_vel.y;
+      twist.angular.z = angular_vel.z;
+      model_states.twist.push_back(twist);
+      */
+    }
+    item = item->nextItem();
+  }
+  pub_model_states_.publish(model_states);
 }
 
 void WorldRosItem::queueThread()
