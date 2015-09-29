@@ -71,6 +71,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
   sensors.makeIdMap(gyroSensors_);
   sensors.makeIdMap(accelSensors_);
   sensors.makeIdMap(visionSensors_);
+  sensors.makeIdMap(rangeVisionSensors_);
   sensors.makeIdMap(rangeSensors_);
   
   force_sensor_publishers_.resize(forceSensors_.size());
@@ -96,6 +97,12 @@ bool BodyRosItem::createSensors(BodyPtr body)
   for (size_t i=0; i < visionSensors_.size(); ++i) {
     if (Device* sensor = visionSensors_.get(i)) {
       vision_sensor_publishers_[i] = it.advertise(sensor->name(), 1);
+    }
+  }
+  range_vision_sensor_publishers_.resize(rangeVisionSensors_.size());
+  for (size_t i=0; i < rangeVisionSensors_.size(); ++i) {
+    if (Device* sensor = rangeVisionSensors_.get(i)) {
+      range_vision_sensor_publishers_[i] = rosnode_->advertise<sensor_msgs::PointCloud2>(sensor->name() + "/point_cloud", 1);
     }
   }
   range_sensor_publishers_.resize(rangeSensors_.size());
@@ -200,6 +207,37 @@ void BodyRosItem::input()
       for (size_t j = 0; j < vision.step * vision.height; ++j)
         vision.data[j] = sensor->image().pixels()[j];
       vision_sensor_publishers_[i].publish(vision);
+    }
+  }
+  for (size_t i=0; i < rangeVisionSensors_.size(); ++i) {
+    if (RangeCamera* sensor = rangeVisionSensors_.get(i)) {
+      sensor_msgs::PointCloud2 range;
+      range.header.stamp.fromSec(inputTime);
+      range.width = sensor->resolutionX();
+      range.height = sensor->resolutionY();
+      range.is_bigendian = 0;
+      range.point_step = sizeof(float) * 3;
+      range.row_step = range.point_step * range.width;
+      range.fields.resize(3);
+      range.fields[0].name = "x";
+      range.fields[0].offset = 0;
+      range.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
+      range.fields[0].count = sensor->points().size();
+      range.fields[0].name = "y";
+      range.fields[0].offset = sizeof(float);
+      range.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
+      range.fields[0].count = sensor->points().size();
+      range.fields[0].name = "z";
+      range.fields[0].offset = 2 * sizeof(float);
+      range.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
+      range.fields[0].count = sensor->points().size();
+      range.data.resize(sensor->points().size() * range.point_step);
+      for (size_t j = 0; j < sensor->points().size(); ++j) {
+        std::memcpy(&(range.data[range.point_step*j]), &(sensor->points()[j][0]), sizeof(float));
+        std::memcpy(&(range.data[range.point_step*j])+sizeof(float), &(sensor->points()[j][1]), sizeof(float));
+        std::memcpy(&(range.data[range.point_step*j])+2*sizeof(float), &(sensor->points()[j][2]), sizeof(float));
+      }
+      range_vision_sensor_publishers_[i].publish(range);
     }
   }
   for (size_t i=0; i < rangeSensors_.size(); ++i) {
