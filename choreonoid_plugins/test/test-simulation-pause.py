@@ -3,8 +3,6 @@
 import time
 import rospy
 from std_srvs.srv import Empty
-from gazebo_msgs.srv import SpawnModel
-from gazebo_msgs.srv import DeleteModel
 
 ns = '/AISTSimulator/'
 
