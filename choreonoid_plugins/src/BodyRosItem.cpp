@@ -71,6 +71,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
   sensors.makeIdMap(gyroSensors_);
   sensors.makeIdMap(accelSensors_);
   sensors.makeIdMap(visionSensors_);
+  sensors.makeIdMap(rangeSensors_);
   
   force_sensor_publishers_.resize(forceSensors_.size());
   for (size_t i=0; i < forceSensors_.size(); ++i) {
@@ -95,6 +96,12 @@ bool BodyRosItem::createSensors(BodyPtr body)
   for (size_t i=0; i < visionSensors_.size(); ++i) {
     if (Device* sensor = visionSensors_.get(i)) {
       vision_sensor_publishers_[i] = it.advertise(sensor->name(), 1);
+    }
+  }
+  range_sensor_publishers_.resize(rangeSensors_.size());
+  for (size_t i=0; i < rangeSensors_.size(); ++i) {
+    if (Device* sensor = rangeSensors_.get(i)) {
+      range_sensor_publishers_[i] = rosnode_->advertise<sensor_msgs::LaserScan>(sensor->name(), 1);
     }
   }
 }
@@ -193,6 +200,26 @@ void BodyRosItem::input()
       for (size_t j = 0; j < vision.step * vision.height; ++j)
         vision.data[j] = sensor->image().pixels()[j];
       vision_sensor_publishers_[i].publish(vision);
+    }
+  }
+  for (size_t i=0; i < rangeSensors_.size(); ++i) {
+    if (RangeSensor* sensor = rangeSensors_.get(i)) {
+      sensor_msgs::LaserScan range;
+      range.header.stamp.fromSec(inputTime);
+      if (sensor->yawRange() == 0.0) {
+        range.angle_max = sensor->pitchRange()/2.0;
+        range.angle_min = -sensor->pitchRange()/2.0;
+        range.angle_increment = sensor->pitchRange() / ((double)sensor->pitchResolution());
+      } else {
+        range.angle_max = sensor->yawRange()/2.0;
+        range.angle_min = -sensor->yawRange()/2.0;
+        range.angle_increment = sensor->yawRange() / ((double)sensor->yawResolution());
+      }
+      range.ranges.resize(sensor->rangeData().size());
+      for (size_t j = 0; j < sensor->rangeData().size(); ++j) {
+        range.ranges[j] = sensor->rangeData()[j];
+      }
+      range_sensor_publishers_[i].publish(range);
     }
   }
 }

@@ -6,6 +6,7 @@
 #include <cnoid/Body>
 #include <cnoid/VisionSensor>
 #include <cnoid/Camera>
+#include <cnoid/RangeSensor>
 #include "exportdecl.h"
 
 #include <ros/ros.h>
@@ -13,6 +14,7 @@
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/Wrench.h>
 #include <geometry_msgs/Accel.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -48,6 +50,7 @@ public:
     const DeviceList<RateGyroSensor>& gyroSensors() const { return gyroSensors_; }
     const DeviceList<AccelSensor>& accelSensors() const { return accelSensors_; }
     const DeviceList<Camera>& visionSensors() const { return visionSensors_; }
+    const DeviceList<RangeSensor>& rangeSensors() const { return rangeSensors_; }
     
     double controlTime() const { return controlTime_; }
     
@@ -62,6 +65,7 @@ private:
     DeviceList<RateGyroSensor> gyroSensors_;
     DeviceList<AccelSensor> accelSensors_;
     DeviceList<Camera> visionSensors_;
+    DeviceList<RangeSensor> rangeSensors_;
     double timeStep_;
 
     const Target* controllerTarget;
@@ -86,6 +90,7 @@ private:
     std::vector<ros::Publisher> rate_gyro_sensor_publishers_;
     std::vector<ros::Publisher> accel_sensor_publishers_;
     std::vector<image_transport::Publisher> vision_sensor_publishers_;
+    std::vector<ros::Publisher> range_sensor_publishers_;
 };
 
 typedef ref_ptr<BodyRosItem> BodyRosItemPtr;
