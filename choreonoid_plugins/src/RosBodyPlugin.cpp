@@ -1,4 +1,5 @@
 #include "BodyRosItem.h"
+#include "WorldRosItem.h"
 #include <cnoid/Plugin>
 
 using namespace cnoid;
@@ -10,6 +11,7 @@ public:
   
   virtual bool initialize() {
     BodyRosItem::initialize(this);
+    WorldRosItem::initialize(this);
     return true;
   }
 };

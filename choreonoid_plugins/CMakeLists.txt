@@ -122,7 +122,7 @@ function(add_cnoid_plugin)
 endfunction()
 
 ## Plugins
-add_cnoid_plugin(CnoidRosBodyPlugin SHARED src/RosBodyPlugin.cpp src/BodyRosItem.cpp)
+add_cnoid_plugin(CnoidRosBodyPlugin SHARED src/RosBodyPlugin.cpp src/BodyRosItem.cpp src/WorldRosItem.cpp)
 #add_dependencies(CnoidRosBodyPlugin gazebo_msgs_gencpp)
 target_link_libraries(CnoidRosBodyPlugin ${CNOID_LIBRARIES} CnoidBodyPlugin ${catkin_LIBRARIES})
 
