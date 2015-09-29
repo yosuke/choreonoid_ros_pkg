@@ -73,6 +73,11 @@ items:
             contactCorrectionVelocityRatio: 1
             kinematicWalking: false
             2Dmode: false
+        - 
+          id: 5
+          name: "WorldRos"
+          plugin: RosBody
+          class: WorldRosItem
 views: 
   - 
     id: 0
@@ -85,7 +90,8 @@ views:
     class: ItemTreeView
     mounted: true
     state: 
-      checked: [ 2, 4 ]
+      selected: [ 5 ]
+      checked: [ 2, 3, 4, 5 ]
       expanded: [ 1, 2 ]
   - 
     id: 2
@@ -135,7 +141,7 @@ views:
           far: 100
           eye: [ 4, 2, 1.5 ]
           direction: [ -0.888888889, -0.444444444, -0.111111111 ]
-          up: [ -0.099380799, -0.0496903995, 0.99380799 ]
+          up: [ -0.0993807989, -0.0496903995, 0.99380799 ]
         - 
           camera: Orthographic
           orthoHeight: 20
