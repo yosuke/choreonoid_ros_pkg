@@ -95,6 +95,13 @@ private:
     std::vector<image_transport::Publisher> vision_sensor_publishers_;
     std::vector<ros::Publisher> range_vision_sensor_publishers_;
     std::vector<ros::Publisher> range_sensor_publishers_;
+
+    void updateForceSensor(ForceSensor& sensor, ros::Publisher& publisher);
+    void updateRateGyroSensor(RateGyroSensor& sensor, ros::Publisher& publisher);
+    void updateAccelSensor(AccelSensor& sensor, ros::Publisher& publisher);
+    void updateVisionSensor(Camera& sensor, image_transport::Publisher& publisher);
+    void updateRangeVisionSensor(RangeCamera& sensor, ros::Publisher& publisher);
+    void updateRangeSensor(RangeSensor& sensor, ros::Publisher& publisher);
 };
 
 typedef ref_ptr<BodyRosItem> BodyRosItemPtr;
