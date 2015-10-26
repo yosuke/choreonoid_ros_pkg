@@ -11,6 +11,12 @@ choreonoid\_plugin: Choreonoid plugins to publish ROS topic
 Usage
 -----
 
+Make sure you have installed wstool and catkin
+
+```
+$ sudo apt-get install python-wstool python-catkin-tools
+```
+
 Create catkin workspace
 
 ```
@@ -22,14 +28,16 @@ $ wstool init
 Checkout choreonoid\_ros\_pkg
 
 ```
-$ git clone https://github.com/fkanehiro/choreonoid_ros_pkg.git
+$ wstool set choreonoid_ros_pkg https://github.com/fkanehiro/choreonoid_ros_pkg.git --git
+$ wstool update choreonoid_ros_pkg
 ```
 
 Build
 
 ```
 $ cd ~/catkin_ws
-$ catkin_make install
+$ catkin build choreonoid_ros
+$ catkin build choreonoid_plugins
 ```
 
 Run
