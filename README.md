@@ -20,14 +20,19 @@ $ sudo apt-get install python-wstool python-catkin-tools
 Create catkin workspace
 
 ```
-$ mkdir -p catkin_ws/src
-$ cd catkin_ws/src
-$ wstool init
+$ mkdir -p ~/catkin_ws/src
+$ cd ~/catkin_ws/src
+$ catkin_init_workspace
+$ cd ~/catkin_ws
+$ catkin_make
+$ source devel/setup.bash
 ```
 
 Checkout choreonoid\_ros\_pkg
 
 ```
+$ cd ~/catkin_ws/src
+$ wstool init
 $ wstool set choreonoid_ros_pkg https://github.com/fkanehiro/choreonoid_ros_pkg.git --git
 $ wstool update choreonoid_ros_pkg
 ```
