@@ -79,6 +79,7 @@ private:
     std::string bodyName;
 
     boost::shared_ptr<ros::NodeHandle> rosnode_;
+    boost::shared_ptr<ros::AsyncSpinner> async_ros_spin_;
     sensor_msgs::JointState joint_state_;
     ros::Publisher joint_state_publisher_;
     ros::Subscriber joint_state_subscriber_;

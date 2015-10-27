@@ -72,6 +72,8 @@ bool BodyRosItem::start(Target* target)
   ROS_INFO("Joint state update rate %f", joint_state_update_rate_);
   joint_state_update_period_ = 1.0 / joint_state_update_rate_;
   joint_state_last_update_ = controllerTarget->currentTime();
+  async_ros_spin_.reset(new ros::AsyncSpinner(0));
+  async_ros_spin_->start();
   
   return true;
 }
@@ -183,8 +185,6 @@ bool BodyRosItem::control()
       has_trajectory_ = false;
     }
   }
-  
-  ros::spinOnce();
   return true;
 }
 
@@ -235,8 +235,7 @@ void BodyRosItem::updateVisionSensor(Camera* sensor, image_transport::Publisher&
   vision.is_bigendian = 0;
   vision.step = sensor->image().width() * sensor->image().numComponents();
   vision.data.resize(vision.step * vision.height);
-  for (size_t j = 0; j < vision.step * vision.height; ++j)
-    vision.data[j] = sensor->image().pixels()[j];
+  std::memcpy(&(vision.data[0]), &(sensor->image().pixels()[0]), vision.step * vision.height);
   publisher.publish(vision);
 }
 
@@ -303,6 +302,7 @@ void BodyRosItem::output()
 
 void BodyRosItem::stop()
 {
+  async_ros_spin_->stop();
   rosnode_->shutdown();
 }
 
