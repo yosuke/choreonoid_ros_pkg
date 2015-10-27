@@ -26,6 +26,7 @@ BodyRosItem::BodyRosItem()
 {
   controllerTarget = NULL;
   has_trajectory_ = false;
+  joint_state_update_rate_ = 100.0;
 }
 
 BodyRosItem::BodyRosItem(const BodyRosItem& org)
@@ -34,6 +35,7 @@ BodyRosItem::BodyRosItem(const BodyRosItem& org)
 {
   controllerTarget = NULL;
   has_trajectory_ = false;
+  joint_state_update_rate_ = 100.0;
 }
 
 BodyRosItem::~BodyRosItem()
@@ -43,6 +45,12 @@ BodyRosItem::~BodyRosItem()
 ItemPtr BodyRosItem::doDuplicate() const
 {
   return new BodyRosItem(*this);
+}
+
+void BodyRosItem::doPutProperties(PutPropertyFunction& putProperty)
+{
+  putProperty.decimals(2).min(0.0)("Update rate", joint_state_update_rate_,
+                                   changeProperty(joint_state_update_rate_));
 }
 
 bool BodyRosItem::start(Target* target)
@@ -61,6 +69,9 @@ bool BodyRosItem::start(Target* target)
   joint_state_publisher_ = rosnode_->advertise<sensor_msgs::JointState>("joint_states", 1000);
   joint_state_subscriber_ = rosnode_->subscribe("set_joint_trajectory", 1000, &BodyRosItem::callback, this);
   createSensors(simulationBody);
+  ROS_INFO("Joint state update rate %f", joint_state_update_rate_);
+  joint_state_update_period_ = 1.0 / joint_state_update_rate_;
+  joint_state_last_update_ = controllerTarget->currentTime();
   
   return true;
 }
@@ -136,20 +147,24 @@ bool BodyRosItem::control()
 {
   controlTime_ = controllerTarget->currentTime();
 
-  // publish current joint states
-  joint_state_.header.stamp.fromSec(controlTime_);
-  joint_state_.name.resize(simulationBody->numJoints());
-  joint_state_.position.resize(simulationBody->numJoints());
-  joint_state_.velocity.resize(simulationBody->numJoints());
-  joint_state_.effort.resize(simulationBody->numJoints());
-  for (int i = 0; i < simulationBody->numJoints(); i++) {
-    Link* joint = simulationBody->joint(i);
-    joint_state_.name[i] = joint->name();
-    joint_state_.position[i] = joint->q();
-    joint_state_.velocity[i] = joint->dq();
-    joint_state_.effort[i] = joint->u();
+  double updateSince = controlTime_ - joint_state_last_update_;
+  if (updateSince > joint_state_update_period_) {
+    // publish current joint states
+    joint_state_.header.stamp.fromSec(controlTime_);
+    joint_state_.name.resize(simulationBody->numJoints());
+    joint_state_.position.resize(simulationBody->numJoints());
+    joint_state_.velocity.resize(simulationBody->numJoints());
+    joint_state_.effort.resize(simulationBody->numJoints());
+    for (int i = 0; i < simulationBody->numJoints(); i++) {
+      Link* joint = simulationBody->joint(i);
+      joint_state_.name[i] = joint->name();
+      joint_state_.position[i] = joint->q();
+      joint_state_.velocity[i] = joint->dq();
+      joint_state_.effort[i] = joint->u();
+    }
+    joint_state_publisher_.publish(joint_state_);
+    joint_state_last_update_ += joint_state_update_period_;
   }
-  joint_state_publisher_.publish(joint_state_);
   
   // apply joint force based on the trajectory message
   if (has_trajectory_ && controlTime_ >= trajectory_start_) {

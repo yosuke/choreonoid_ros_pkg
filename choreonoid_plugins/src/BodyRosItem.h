@@ -33,6 +33,7 @@ public:
     BodyRosItem();
     BodyRosItem(const BodyRosItem& org);
     virtual ~BodyRosItem();
+    void doPutProperties(PutPropertyFunction& putProperty);
     bool createSensors(BodyPtr body);
     
     virtual bool start(Target* target);
@@ -81,6 +82,9 @@ private:
     sensor_msgs::JointState joint_state_;
     ros::Publisher joint_state_publisher_;
     ros::Subscriber joint_state_subscriber_;
+    double joint_state_update_rate_;
+    double joint_state_update_period_;
+    double joint_state_last_update_;
     
     std::map<std::string, int> joint_number_map_;
     std::vector<std::string> joint_names_;
