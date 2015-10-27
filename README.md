@@ -41,6 +41,7 @@ Build
 
 ```
 $ cd ~/catkin_ws
+$ rm -rf build
 $ catkin build choreonoid_ros
 $ catkin build choreonoid_plugins
 ```

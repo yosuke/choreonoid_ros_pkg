@@ -33,6 +33,7 @@ public:
     BodyRosItem();
     BodyRosItem(const BodyRosItem& org);
     virtual ~BodyRosItem();
+    void doPutProperties(PutPropertyFunction& putProperty);
     bool createSensors(BodyPtr body);
     
     virtual bool start(Target* target);
@@ -81,6 +82,9 @@ private:
     sensor_msgs::JointState joint_state_;
     ros::Publisher joint_state_publisher_;
     ros::Subscriber joint_state_subscriber_;
+    double joint_state_update_rate_;
+    double joint_state_update_period_;
+    double joint_state_last_update_;
     
     std::map<std::string, int> joint_number_map_;
     std::vector<std::string> joint_names_;
@@ -95,6 +99,13 @@ private:
     std::vector<image_transport::Publisher> vision_sensor_publishers_;
     std::vector<ros::Publisher> range_vision_sensor_publishers_;
     std::vector<ros::Publisher> range_sensor_publishers_;
+
+    void updateForceSensor(ForceSensor* sensor, ros::Publisher& publisher);
+    void updateRateGyroSensor(RateGyroSensor* sensor, ros::Publisher& publisher);
+    void updateAccelSensor(AccelSensor* sensor, ros::Publisher& publisher);
+    void updateVisionSensor(Camera* sensor, image_transport::Publisher& publisher);
+    void updateRangeVisionSensor(RangeCamera* sensor, ros::Publisher& publisher);
+    void updateRangeSensor(RangeSensor* sensor, ros::Publisher& publisher);
 };
 
 typedef ref_ptr<BodyRosItem> BodyRosItemPtr;
