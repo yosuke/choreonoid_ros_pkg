@@ -235,8 +235,7 @@ void BodyRosItem::updateVisionSensor(Camera* sensor, image_transport::Publisher&
   vision.is_bigendian = 0;
   vision.step = sensor->image().width() * sensor->image().numComponents();
   vision.data.resize(vision.step * vision.height);
-  for (size_t j = 0; j < vision.step * vision.height; ++j)
-    vision.data[j] = sensor->image().pixels()[j];
+  std::memcpy(&(vision.data[0]), &(sensor->image().pixels()[0]), vision.step * vision.height);
   publisher.publish(vision);
 }
 
