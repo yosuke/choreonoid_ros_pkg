@@ -1,0 +1,5 @@
+<launch>
+  <arg name="PROJECT_FILE" default="$(find choreonoid_ros)/project/empty.cnoid"/>
+  <node name="choreonoid" pkg="choreonoid_ros" type="run_choreonoid.sh" respawn="true"
+        args="$(arg PROJECT_FILE) --start-simulation" />
+</launch>
