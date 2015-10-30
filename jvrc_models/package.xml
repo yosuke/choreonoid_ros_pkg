@@ -1,0 +1,20 @@
+<package>
+  <name>jvrc_models</name>
+  <version>0.0.0</version>
+  <description>
+	</description>
+  <maintainer email="f-kanehiro@aist.go.jp">Fumio Kanehiro</maintainer>
+
+  <license></license>
+
+  <url type="website">https://github.com/jvrc/model</url>
+  <url type="bugtracker">https://github.com/jvrc/model/issues</url>
+  <url type="repository">https://github.com/jvrc/model</url>
+
+  <author>JVRC</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <export>
+  </export>
+</package>
