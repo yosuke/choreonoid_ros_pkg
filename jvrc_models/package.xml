@@ -1,0 +1,21 @@
+<package>
+  <name>jvrc_models</name>
+  <version>0.0.0</version>
+  <description>
+    Simulation models and tasks for Japan Virtual Robotics Challenge (JVRC)
+	</description>
+  <maintainer email="f-kanehiro@aist.go.jp">Fumio Kanehiro</maintainer>
+
+  <license>https://jvrc.org/humanoid/JVRC-1/agreement.html</license>
+
+  <url type="website">http://jvrc.org/</url>
+  <url type="bugtracker">https://github.com/jvrc/model/issues</url>
+  <url type="repository">https://github.com/jvrc/model</url>
+
+  <author>JVRC</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <export>
+  </export>
+</package>
