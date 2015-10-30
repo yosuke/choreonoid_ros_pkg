@@ -3,10 +3,13 @@ About
 
 This repository provides ROS support for Choreonoid
 
-choreonoid\_ros\_pkg: Chorenoid catkin package
+choreonoid\_ros\_pkg: Meta-package to build Chorenoid packages
+
+choreonoid\_ros: Chorenoid catkin package
 
 choreonoid\_plugin: Choreonoid plugins to publish ROS topic
 
+jvrc\_models: Simulation models and tasks for JVRC
 
 Usage
 -----
@@ -42,15 +45,13 @@ Build
 ```
 $ cd ~/catkin_ws
 $ rm -rf build
-$ catkin build choreonoid_ros
-$ catkin build choreonoid_plugins
+$ catkin build choreonoid_ros_pkg
 ```
 
 Run
 
 ```
-$ roscore (on the different terminal)
-$ ./devel/bin/choreonoid
+$ roslaunch choreonoid_ros choreonoid.launch
 ```
 
 Configure AISTSimulator item to use High-gain dynamics mode.
