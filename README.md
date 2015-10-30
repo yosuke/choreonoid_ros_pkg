@@ -3,9 +3,9 @@ About
 
 This repository provides ROS support for Choreonoid
 
-choreonoid\_ros\_pkg: Meta-package to build Chorenoid packages
+choreonoid\_ros\_pkg: Meta-package to build Choreonoid packages
 
-choreonoid\_ros: Chorenoid catkin package
+choreonoid\_ros: Choreonoid catkin package
 
 choreonoid\_plugin: Choreonoid plugins to publish ROS topic
 
