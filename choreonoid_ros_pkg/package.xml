@@ -1,0 +1,29 @@
+<package>
+  <name>choreonoid_ros_pkg</name>
+  <version>1.5.0</version>
+  <description>
+    Meta package to install choreonoid_ros
+	</description>
+  <maintainer email="f-kanehiro@aist.go.jp">Fumio Kanehiro</maintainer>
+
+  <license>MIT</license>
+
+  <url type="website">http://choreonoid.org/</url>
+  <url type="bugtracker">https://github.com/s-nakaoka/choreonoid/issues</url>
+  <url type="repository">https://github.com/s-nakaoka/choreonoid</url>
+
+  <author>Shin'ichiro Nakaoka and Choreonoid Development Team, AIST.</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>choreonoid_ros</build_depend>
+  <build_depend>choreonoid_plugins</build_depend>
+  <build_depend>jvrc_models</build_depend>
+
+  <run_depend>choreonoid_ros</run_depend>
+  <run_depend>choreonoid_plugins</run_depend>
+  <run_depend>jvrc_models</run_depend>
+  
+  <export>
+  </export>
+</package>
