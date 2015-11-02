@@ -204,6 +204,7 @@ void BodyRosItem::updateRateGyroSensor(RateGyroSensor* sensor, ros::Publisher& p
 {
   sensor_msgs::Imu gyro;
   gyro.header.stamp.fromSec(controllerTarget->currentTime());
+  gyro.header.frame_id = sensor->name();
   gyro.angular_velocity.x = sensor->w()[0];
   gyro.angular_velocity.y = sensor->w()[1];
   gyro.angular_velocity.z = sensor->w()[2];
@@ -223,6 +224,7 @@ void BodyRosItem::updateVisionSensor(Camera* sensor, image_transport::Publisher&
 {
   sensor_msgs::Image vision;
   vision.header.stamp.fromSec(controllerTarget->currentTime());
+  vision.header.frame_id = sensor->name();
   vision.height = sensor->image().height();
   vision.width = sensor->image().width();
   if (sensor->image().numComponents() == 3)
@@ -243,6 +245,7 @@ void BodyRosItem::updateRangeVisionSensor(RangeCamera* sensor, ros::Publisher& p
 {
   sensor_msgs::PointCloud2 range;
   range.header.stamp.fromSec(controllerTarget->currentTime());
+  range.header.frame_id = sensor->name();
   range.width = sensor->resolutionX();
   range.height = sensor->resolutionY();
   range.is_bigendian = 0;
@@ -274,6 +277,7 @@ void BodyRosItem::updateRangeSensor(RangeSensor* sensor, ros::Publisher& publish
 {
   sensor_msgs::LaserScan range;
   range.header.stamp.fromSec(controllerTarget->currentTime());
+  range.header.frame_id = sensor->name();
   if (sensor->yawRange() == 0.0) {
     range.angle_max = sensor->pitchRange()/2.0;
     range.angle_min = -sensor->pitchRange()/2.0;
