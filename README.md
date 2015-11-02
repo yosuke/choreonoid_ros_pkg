@@ -44,7 +44,7 @@ Build
 
 ```
 $ cd ~/catkin_ws
-$ rm -rf build
+$ catkin clean -b
 $ catkin build choreonoid_ros_pkg
 ```
 

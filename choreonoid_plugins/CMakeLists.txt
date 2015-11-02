@@ -4,7 +4,6 @@ project(choreonoid_plugins)
 find_package(catkin REQUIRED COMPONENTS 
   choreonoid_ros
   message_generation 
-  gazebo_msgs 
   roscpp 
   rospy 
   nodelet 
@@ -61,7 +60,6 @@ catkin_package(
   CnoidRosBodyPlugin
   CATKIN_DEPENDS
   message_generation 
-  gazebo_msgs 
   roscpp 
   rospy 
   nodelet 
@@ -80,7 +78,6 @@ catkin_package(
   rosconsole
   camera_info_manager
 )
-#add_dependencies(${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -finline-functions")
 option(ENABLE_GCC_FVISIBILITY_HIDDEN "Use the -fvisibility=hidden option when the sources are compiled" ON)
@@ -99,10 +96,10 @@ function(add_cnoid_plugin)
     endif()
   endif()
 
-  set_target_properties(${ARGV0} PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CNOID_PLUGIN_SUBDIR}
-    ARCHIVE_OUTPUT_DIRECTORY ${CNOID_PLUGIN_SUBDIR}
-    RUNTIME_OUTPUT_DIRECTORY ${CNOID_PLUGIN_SUBDIR})
+#  set_target_properties(${ARGV0} PROPERTIES
+#    LIBRARY_OUTPUT_DIRECTORY ${CNOID_PLUGIN_SUBDIR}
+#    ARCHIVE_OUTPUT_DIRECTORY ${CNOID_PLUGIN_SUBDIR}
+#    RUNTIME_OUTPUT_DIRECTORY ${CNOID_PLUGIN_SUBDIR})
 
   if(ENABLE_INSTALL_RPATH)
     if(APPLE)
@@ -123,7 +120,6 @@ endfunction()
 
 ## Plugins
 add_cnoid_plugin(CnoidRosBodyPlugin SHARED src/RosBodyPlugin.cpp src/BodyRosItem.cpp src/WorldRosItem.cpp)
-#add_dependencies(CnoidRosBodyPlugin gazebo_msgs_gencpp)
 target_link_libraries(CnoidRosBodyPlugin ${CNOID_LIBRARIES} CnoidBodyPlugin ${catkin_LIBRARIES})
 
 install(TARGETS 
