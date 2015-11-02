@@ -4,9 +4,12 @@
   <include file="$(find choreonoid_ros)/launch/choreonoid.launch">
     <arg name="PROJECT_FILE" default="$(find choreonoid_plugins)/test/jvrc1test.cnoid" />
   </include>
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="jvrc_1_state_publisher" >
+    <remap from="joint_states" to="/JVRC_1/joint_states" />
+  </node>
   <node name="jvrc_1_rviz" pkg="rviz" type="rviz" respawn="true"
         args="-sync -d $(find choreonoid_ros)/launch/jvrc-1.rviz" />
   <node name="map_root_frame_id" pkg="tf"
         type="static_transform_publisher"
-        args="0 0 0 0 0 0 /map /BODY 33" />
+        args="0 0 0 0 0 0 /map /PELVIS_S 33" />
 </launch>
