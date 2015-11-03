@@ -278,18 +278,22 @@ void BodyRosItem::updateRangeSensor(RangeSensor* sensor, ros::Publisher& publish
   sensor_msgs::LaserScan range;
   range.header.stamp.fromSec(controllerTarget->currentTime());
   range.header.frame_id = sensor->name();
+  range.range_max = sensor->maxDistance();
+  range.range_min = sensor->minDistance();
   if (sensor->yawRange() == 0.0) {
-    range.range_max = range.angle_max = sensor->pitchRange()/2.0;
-    range.range_min = range.angle_min = -sensor->pitchRange()/2.0;
+    range.angle_max = sensor->pitchRange()/2.0;
+    range.angle_min = -sensor->pitchRange()/2.0;
     range.angle_increment = sensor->pitchRange() / ((double)sensor->pitchResolution());
   } else {
-    range.range_max = range.angle_max = sensor->yawRange()/2.0;
-    range.range_min = range.angle_min = -sensor->yawRange()/2.0;
+    range.angle_max = sensor->yawRange()/2.0;
+    range.angle_min = -sensor->yawRange()/2.0;
     range.angle_increment = sensor->yawRange() / ((double)sensor->yawResolution());
   }
   range.ranges.resize(sensor->rangeData().size());
+  //range.intensities.resize(sensor->rangeData().size());
   for (size_t j = 0; j < sensor->rangeData().size(); ++j) {
     range.ranges[j] = sensor->rangeData()[j];
+    //range.intensities[j] = -900000;
   }
   publisher.publish(range);
 }
