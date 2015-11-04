@@ -18,12 +18,14 @@ before_install:
   - echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
   - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu precise main" > /etc/apt/sources.list.d/ros-latest.list'
   - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+  - sudo add-apt-repository ppa:hrg/daily
   - sudo apt-get update -qq
-  - sudo apt-get install -qq -y python-catkin-tools python-rosdep python-wstool
+  - sudo apt-get install -qq -y python-catkin-tools python-rosdep python-wstool python-setuptools openhrp meshlab imagemagick python-omniorb openrtm-aist-python
+  - sudo easy_install pip
   - sudo rosdep init
   - rosdep update
 install:
-  # Create workspace
+  - sudo pip install git+https://github.com/fkanehiro/simtrans
   - mkdir -p ~/ros/ws_$REPOSITORY_NAME/src
   - cd ~/ros/ws_$REPOSITORY_NAME/src
   - wstool init .
