@@ -18,7 +18,7 @@ before_install:
   - echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
   - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu precise main" > /etc/apt/sources.list.d/ros-latest.list'
   - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
-  - sudo add-apt-repository ppa:hrg/daily
+  - sudo add-apt-repository ppa:hrg/daily -y
   - sudo apt-get update -qq
   - sudo apt-get install -qq -y python-catkin-tools python-rosdep python-wstool python-setuptools openhrp meshlab imagemagick python-omniorb openrtm-aist-python
   - sudo easy_install pip
