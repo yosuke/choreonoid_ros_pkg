@@ -109,7 +109,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
   accel_sensor_publishers_.resize(accelSensors_.size());
   for (size_t i=0; i < accelSensors_.size(); ++i) {
     if (AccelSensor* sensor = accelSensors_.get(i)) {
-      accel_sensor_publishers_[i] = rosnode_->advertise<geometry_msgs::Accel>(sensor->name(), 1);
+      accel_sensor_publishers_[i] = rosnode_->advertise<sensor_msgs::Imu>(sensor->name(), 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateAccelSensor,
                                                     this, sensor, accel_sensor_publishers_[i]));
       ROS_INFO("Create accel sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
@@ -213,10 +213,12 @@ void BodyRosItem::updateRateGyroSensor(RateGyroSensor* sensor, ros::Publisher& p
 
 void BodyRosItem::updateAccelSensor(AccelSensor* sensor, ros::Publisher& publisher)
 {
-  geometry_msgs::Accel accel;
-  accel.linear.x = sensor->dv()[0];
-  accel.linear.y = sensor->dv()[1];
-  accel.linear.z = sensor->dv()[2];
+  sensor_msgs::Imu accel;
+  accel.header.stamp.fromSec(controllerTarget->currentTime());
+  accel.header.frame_id = sensor->name();
+  accel.linear_acceleration.x = sensor->dv()[0];
+  accel.linear_acceleration.y = sensor->dv()[1];
+  accel.linear_acceleration.z = sensor->dv()[2];
   publisher.publish(accel);
 }
 

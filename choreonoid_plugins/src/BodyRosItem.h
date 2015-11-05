@@ -17,7 +17,6 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/Wrench.h>
-#include <geometry_msgs/Accel.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <image_transport/image_transport.h>
 

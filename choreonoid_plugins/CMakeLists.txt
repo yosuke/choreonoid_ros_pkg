@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   nodelet 
   angles 
   std_srvs 
+  gazebo_msgs 
   geometry_msgs 
   sensor_msgs 
   nav_msgs 
@@ -65,6 +66,7 @@ catkin_package(
   nodelet 
   angles 
   std_srvs 
+  gazebo_msgs 
   geometry_msgs 
   sensor_msgs 
   nav_msgs 
