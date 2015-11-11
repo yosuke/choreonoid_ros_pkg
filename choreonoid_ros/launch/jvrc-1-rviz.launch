@@ -2,7 +2,7 @@
   <param name="use_sim_time" value="true" />
   <param name="robot_description" textfile="$(find jvrc_models)/urdf/JVRC-1/jvrc-1.urdf"/>
   <include file="$(find choreonoid_ros)/launch/choreonoid.launch">
-    <arg name="PROJECT_FILE" default="$(find choreonoid_plugins)/test/jvrc1test.cnoid" />
+    <arg name="PROJECT_FILE" default="$(find choreonoid_plugins)/test/jvrc1-O1.cnoid" />
   </include>
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="jvrc_1_state_publisher" >
     <remap from="joint_states" to="/JVRC_1/joint_states" />
