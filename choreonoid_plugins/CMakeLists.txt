@@ -81,6 +81,7 @@ catkin_package(
   camera_info_manager
 )
 
+option(ENABLE_PYTHON "" ON)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -finline-functions")
 option(ENABLE_GCC_FVISIBILITY_HIDDEN "Use the -fvisibility=hidden option when the sources are compiled" ON)
 option(ENABLE_INSTALL_RPATH "Enable RPATH setting for installed binary files" ON)
@@ -120,6 +121,42 @@ function(add_cnoid_plugin)
 
 endfunction()
 
+if(ENABLE_PYTHON)
+
+  find_package(PythonLibs 2.7 REQUIRED)
+  include_directories(${PYTHON_INCLUDE_PATH})
+  set(CNOID_PYTHON_SUBDIR ${CNOID_PLUGIN_SUBDIR}/python)
+
+  function(add_cnoid_python_module)
+  
+    set(target ${ARGV0})
+    string(REGEX REPLACE "^Py(.+)$" "\\1" module ${target})
+    set(sources ${ARGV})
+    list(REMOVE_AT sources 0)
+
+    add_library(${target} SHARED ${sources})
+    
+    if(NOT WIN32)
+      set_target_properties(${target}  PROPERTIES
+      COMPILE_DEFINITIONS "BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY" )
+    endif()
+
+    set_target_properties(${target}  PROPERTIES
+    #  RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/${CNOID_PYTHON_SUBDIR}/cnoid
+    #  LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/${CNOID_PYTHON_SUBDIR}/cnoid
+      RUNTIME_OUTPUT_NAME ${module}
+      LIBRARY_OUTPUT_NAME ${module}
+      PREFIX "")
+
+    #install(TARGETS ${target}
+    #  RUNTIME DESTINATION ${CNOID_PYTHON_SUBDIR}/cnoid CONFIGURATIONS Release Debug RelWithDebInfo MinSizeRel
+    #  LIBRARY DESTINATION ${CNOID_PYTHON_SUBDIR}/cnoid CONFIGURATIONS Release Debug RelWithDebInfo MinSizeRel)
+
+  endfunction()
+
+
+endif()
+
 ## Plugins
 add_cnoid_plugin(CnoidRosBodyPlugin SHARED src/RosBodyPlugin.cpp src/BodyRosItem.cpp src/WorldRosItem.cpp)
 target_link_libraries(CnoidRosBodyPlugin ${CNOID_LIBRARIES} CnoidBodyPlugin ${catkin_LIBRARIES})
@@ -130,3 +167,7 @@ install(TARGETS
   LIBRARY DESTINATION ${CNOID_PLUGIN_SUBDIR}
   ARCHIVE DESTINATION ${CNOID_PLUGIN_SUBDIR}
 )
+
+if(ENABLE_PYTHON)
+  add_subdirectory(src/python)
+endif()
