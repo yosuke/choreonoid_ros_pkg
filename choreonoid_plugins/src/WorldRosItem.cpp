@@ -42,7 +42,7 @@ WorldRosItem::~WorldRosItem()
   stop();
 }
 
-ItemPtr WorldRosItem::doDuplicate() const
+Item* WorldRosItem::doDuplicate() const
 {
   return new WorldRosItem(*this);
 }

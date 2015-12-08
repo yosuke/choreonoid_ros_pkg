@@ -39,7 +39,7 @@ public:
     void setModuleName(const std::string& name);
 
 protected:
-    virtual ItemPtr doDuplicate() const;
+    virtual Item* doDuplicate() const;
     
 private:
     WorldItemPtr world;
