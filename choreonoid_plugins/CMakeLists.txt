@@ -168,6 +168,11 @@ install(TARGETS
   ARCHIVE DESTINATION ${CNOID_PLUGIN_SUBDIR}
 )
 
+install(
+  DIRECTORY test
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
 if(ENABLE_PYTHON)
   add_subdirectory(src/python)
 endif()
