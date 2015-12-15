@@ -301,9 +301,9 @@ void BodyRosItem::updateRangeVisionSensor(RangeCamera* sensor, ros::Publisher& p
     std::memcpy(&dst[4], &y, 4);
     std::memcpy(&dst[8], &z, 4);
     if (sensor->imageType() == cnoid::Camera::COLOR_IMAGE) {
-      dst[12] = *pixels++;
-      dst[13] = *pixels++;
       dst[14] = *pixels++;
+      dst[13] = *pixels++;
+      dst[12] = *pixels++;
       dst[15] = 0;
     }
     dst += range.point_step;
