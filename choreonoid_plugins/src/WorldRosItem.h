@@ -57,7 +57,7 @@ private:
     bool resetSimulation(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
     bool pausePhysics(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
     bool unpausePhysics(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
-    bool spawnVRMLModel(gazebo_msgs::SpawnModel::Request &req, gazebo_msgs::SpawnModel::Response &res);
+    bool spawnModel(gazebo_msgs::SpawnModel::Request &req, gazebo_msgs::SpawnModel::Response &res);
     bool deleteModel(gazebo_msgs::DeleteModel::Request &req, gazebo_msgs::DeleteModel::Response &res);
 
     ros::Publisher     pub_clock_;
@@ -68,6 +68,8 @@ private:
     ros::ServiceServer pause_physics_service_;
     ros::ServiceServer unpause_physics_service_;
     ros::ServiceServer spawn_vrml_model_service_;
+    ros::ServiceServer spawn_urdf_model_service_;
+    ros::ServiceServer spawn_sdf_model_service_;
     ros::ServiceServer delete_model_service_;
 };
 

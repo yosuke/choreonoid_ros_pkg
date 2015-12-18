@@ -1,4 +1,5 @@
 #include "WorldRosItem.h"
+#include "BodyRosItem.h"
 #include <cnoid/BodyItem>
 #include <cnoid/RootItem>
 #include <cnoid/Link>
@@ -61,7 +62,7 @@ void WorldRosItem::start()
   std::string name = sim->name();
   ROS_INFO("Found SimulatorItem: %s", name.c_str());
   std::replace(name.begin(), name.end(), '-', '_');
-  rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(name));
+  rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(world->name()));
 
   pub_clock_ = rosnode_->advertise<rosgraph_msgs::Clock>("/clock", 10);
   pub_link_states_ = rosnode_->advertise<gazebo_msgs::LinkStates>("link_states", 10);
@@ -97,9 +98,25 @@ void WorldRosItem::start()
   ros::AdvertiseServiceOptions spawn_vrml_model_aso =
     ros::AdvertiseServiceOptions::create<gazebo_msgs::SpawnModel>(
                                                                   spawn_vrml_model_service_name,
-                                                                  boost::bind(&WorldRosItem::spawnVRMLModel,this,_1,_2),
+                                                                  boost::bind(&WorldRosItem::spawnModel,this,_1,_2),
                                                                   ros::VoidPtr(), &rosqueue_);
   spawn_vrml_model_service_ = rosnode_->advertiseService(spawn_vrml_model_aso);
+
+  std::string spawn_urdf_model_service_name("spawn_urdf_model");
+  ros::AdvertiseServiceOptions spawn_urdf_model_aso =
+    ros::AdvertiseServiceOptions::create<gazebo_msgs::SpawnModel>(
+                                                                  spawn_urdf_model_service_name,
+                                                                  boost::bind(&WorldRosItem::spawnModel,this,_1,_2),
+                                                                  ros::VoidPtr(), &rosqueue_);
+  spawn_urdf_model_service_ = rosnode_->advertiseService(spawn_urdf_model_aso);
+
+  std::string spawn_sdf_model_service_name("spawn_sdf_model");
+  ros::AdvertiseServiceOptions spawn_sdf_model_aso =
+    ros::AdvertiseServiceOptions::create<gazebo_msgs::SpawnModel>(
+                                                                  spawn_sdf_model_service_name,
+                                                                  boost::bind(&WorldRosItem::spawnModel,this,_1,_2),
+                                                                  ros::VoidPtr(), &rosqueue_);
+  spawn_sdf_model_service_ = rosnode_->advertiseService(spawn_sdf_model_aso);
 
   std::string delete_model_service_name("delete_model");
   ros::AdvertiseServiceOptions delete_aso =
@@ -232,8 +249,8 @@ bool WorldRosItem::resetSimulation(std_srvs::Empty::Request &req, std_srvs::Empt
   return true;
 }
 
-bool WorldRosItem::spawnVRMLModel(gazebo_msgs::SpawnModel::Request &req,
-                                  gazebo_msgs::SpawnModel::Response &res)
+bool WorldRosItem::spawnModel(gazebo_msgs::SpawnModel::Request &req,
+                              gazebo_msgs::SpawnModel::Response &res)
 {
   std::string model_name = req.model_name;
   std::string model_xml = req.model_xml;
@@ -262,7 +279,12 @@ bool WorldRosItem::spawnVRMLModel(gazebo_msgs::SpawnModel::Request &req,
   body->body()->rootLink()->setRotation(R.matrix());
   world->addChildItem(body);
 
+  BodyRosItemPtr bodyros = new BodyRosItem();
+  bodyros->setName(req.model_name + "_ROS");
+  body->addChildItem(bodyros);
+  
   ItemTreeView::instance()->checkItem(body);
+  ItemTreeView::instance()->checkItem(bodyros);
   
   return true;
 }
