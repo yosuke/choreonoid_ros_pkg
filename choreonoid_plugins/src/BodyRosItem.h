@@ -4,8 +4,10 @@
 #include <cnoid/ControllerItem>
 #include <cnoid/BasicSensorSimulationHelper>
 #include <cnoid/Body>
-#include <cnoid/VisionSensor>
+#include <cnoid/Device>
+#include <cnoid/DeviceList>
 #include <cnoid/Camera>
+#include <cnoid/RangeCamera>
 #include <cnoid/RangeSensor>
 #include "exportdecl.h"
 
@@ -49,7 +51,7 @@ public:
     const BodyPtr& body() const { return simulationBody; };
     const DeviceList<ForceSensor>& forceSensors() const { return forceSensors_; }
     const DeviceList<RateGyroSensor>& gyroSensors() const { return gyroSensors_; }
-    const DeviceList<AccelSensor>& accelSensors() const { return accelSensors_; }
+    const DeviceList<AccelerationSensor>& accelSensors() const { return accelSensors_; }
     const DeviceList<Camera>& visionSensors() const { return visionSensors_; }
     const DeviceList<RangeCamera>& rangeVisionSensors() const { return rangeVisionSensors_; }
     const DeviceList<RangeSensor>& rangeSensors() const { return rangeSensors_; }
@@ -59,13 +61,13 @@ public:
     void setModuleName(const std::string& name);
 
 protected:
-    virtual ItemPtr doDuplicate() const;
+    virtual Item* doDuplicate() const;
         
 private:
     BodyPtr simulationBody;
     DeviceList<ForceSensor> forceSensors_;
     DeviceList<RateGyroSensor> gyroSensors_;
-    DeviceList<AccelSensor> accelSensors_;
+    DeviceList<AccelerationSensor> accelSensors_;
     DeviceList<Camera> visionSensors_;
     DeviceList<RangeCamera> rangeVisionSensors_;
     DeviceList<RangeSensor> rangeSensors_;
@@ -102,7 +104,7 @@ private:
 
     void updateForceSensor(ForceSensor* sensor, ros::Publisher& publisher);
     void updateRateGyroSensor(RateGyroSensor* sensor, ros::Publisher& publisher);
-    void updateAccelSensor(AccelSensor* sensor, ros::Publisher& publisher);
+    void updateAccelSensor(AccelerationSensor* sensor, ros::Publisher& publisher);
     void updateVisionSensor(Camera* sensor, image_transport::Publisher& publisher);
     void updateRangeVisionSensor(RangeCamera* sensor, ros::Publisher& publisher);
     void updateRangeSensor(RangeSensor* sensor, ros::Publisher& publisher);
