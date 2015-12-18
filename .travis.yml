@@ -34,6 +34,7 @@ install:
   - mkdir -p ~/ros/ws_$REPOSITORY_NAME/src
   - cd ~/ros/ws_$REPOSITORY_NAME/src
   - wstool init .
+  - wstool update
   - rm -rf $REPOSITORY_NAME
   - ln -s $CI_SOURCE_PATH .
   - cd ../
