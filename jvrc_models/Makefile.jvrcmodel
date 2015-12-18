@@ -1,0 +1,11 @@
+# -*- mode: makefile -*-
+GIT_DIR = model
+GIT_URL = https://github.com/jvrc/model.git
+GIT_REVISION = master
+
+MK_DIR = $(shell rospack find mk)
+include $(MK_DIR)/git_checkout.mk
+
+checkout.model: $(GIT_DIR)
+	touch checkout.model
+
