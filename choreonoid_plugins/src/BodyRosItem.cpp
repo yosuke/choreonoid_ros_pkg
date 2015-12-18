@@ -42,7 +42,7 @@ BodyRosItem::~BodyRosItem()
 {
 }
 
-ItemPtr BodyRosItem::doDuplicate() const
+Item* BodyRosItem::doDuplicate() const
 {
   return new BodyRosItem(*this);
 }
@@ -80,17 +80,16 @@ bool BodyRosItem::start(Target* target)
 
 bool BodyRosItem::createSensors(BodyPtr body)
 {
-  const DeviceList<Device> sensors(body->devices());
-  sensors.makeIdMap(forceSensors_);
-  sensors.makeIdMap(gyroSensors_);
-  sensors.makeIdMap(accelSensors_);
-  sensors.makeIdMap(visionSensors_);
-  sensors.makeIdMap(rangeVisionSensors_);
-  sensors.makeIdMap(rangeSensors_);
-  
+  forceSensors_ = body->devices<ForceSensor>().getSortedById();
+  gyroSensors_ = body->devices<RateGyroSensor>().getSortedById();
+  accelSensors_ = body->devices<AccelerationSensor>().getSortedById();
+  visionSensors_ = body->devices<Camera>().getSortedById();
+  rangeVisionSensors_ = body->devices<RangeCamera>().getSortedById();
+  rangeSensors_ = body->devices<RangeSensor>().getSortedById();
+
   force_sensor_publishers_.resize(forceSensors_.size());
   for (size_t i=0; i < forceSensors_.size(); ++i) {
-    if (ForceSensor* sensor = forceSensors_.get(i)) {
+    if (ForceSensor* sensor = forceSensors_[i]) {
       force_sensor_publishers_[i] = rosnode_->advertise<geometry_msgs::Wrench>(sensor->name(), 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateForceSensor,
                                                     this, sensor, force_sensor_publishers_[i]));
@@ -99,7 +98,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
   }
   rate_gyro_sensor_publishers_.resize(gyroSensors_.size());
   for (size_t i=0; i < gyroSensors_.size(); ++i) {
-    if (RateGyroSensor* sensor = gyroSensors_.get(i)) {
+    if (RateGyroSensor* sensor = gyroSensors_[i]) {
       rate_gyro_sensor_publishers_[i] = rosnode_->advertise<sensor_msgs::Imu>(sensor->name(), 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateRateGyroSensor,
                                                     this, sensor, rate_gyro_sensor_publishers_[i]));
@@ -108,7 +107,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
   }
   accel_sensor_publishers_.resize(accelSensors_.size());
   for (size_t i=0; i < accelSensors_.size(); ++i) {
-    if (AccelSensor* sensor = accelSensors_.get(i)) {
+    if (AccelerationSensor* sensor = accelSensors_[i]) {
       accel_sensor_publishers_[i] = rosnode_->advertise<sensor_msgs::Imu>(sensor->name(), 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateAccelSensor,
                                                     this, sensor, accel_sensor_publishers_[i]));
@@ -118,7 +117,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
   image_transport::ImageTransport it(*rosnode_);
   vision_sensor_publishers_.resize(visionSensors_.size());
   for (size_t i=0; i < visionSensors_.size(); ++i) {
-    if (Camera* sensor = visionSensors_.get(i)) {
+    if (Camera* sensor = visionSensors_[i]) {
       vision_sensor_publishers_[i] = it.advertise(sensor->name() + "/image_raw", 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateVisionSensor,
                                                     this, sensor, vision_sensor_publishers_[i]));
@@ -127,7 +126,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
   }
   range_vision_sensor_publishers_.resize(rangeVisionSensors_.size());
   for (size_t i=0; i < rangeVisionSensors_.size(); ++i) {
-    if (RangeCamera* sensor = rangeVisionSensors_.get(i)) {
+    if (RangeCamera* sensor = rangeVisionSensors_[i]) {
       range_vision_sensor_publishers_[i] = rosnode_->advertise<sensor_msgs::PointCloud2>(sensor->name() + "/point_cloud", 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateRangeVisionSensor,
                                                     this, sensor, range_vision_sensor_publishers_[i]));
@@ -136,7 +135,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
   }
   range_sensor_publishers_.resize(rangeSensors_.size());
   for (size_t i=0; i < rangeSensors_.size(); ++i) {
-    if (RangeSensor* sensor = rangeSensors_.get(i)) {
+    if (RangeSensor* sensor = rangeSensors_[i]) {
       range_sensor_publishers_[i] = rosnode_->advertise<sensor_msgs::LaserScan>(sensor->name(), 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateRangeSensor,
                                                     this, sensor, range_sensor_publishers_[i]));
@@ -211,7 +210,7 @@ void BodyRosItem::updateRateGyroSensor(RateGyroSensor* sensor, ros::Publisher& p
   publisher.publish(gyro);
 }
 
-void BodyRosItem::updateAccelSensor(AccelSensor* sensor, ros::Publisher& publisher)
+void BodyRosItem::updateAccelSensor(AccelerationSensor* sensor, ros::Publisher& publisher)
 {
   sensor_msgs::Imu accel;
   accel.header.stamp.fromSec(controllerTarget->currentTime());
@@ -302,9 +301,9 @@ void BodyRosItem::updateRangeVisionSensor(RangeCamera* sensor, ros::Publisher& p
     std::memcpy(&dst[4], &y, 4);
     std::memcpy(&dst[8], &z, 4);
     if (sensor->imageType() == cnoid::Camera::COLOR_IMAGE) {
-      dst[12] = *pixels++;
-      dst[13] = *pixels++;
       dst[14] = *pixels++;
+      dst[13] = *pixels++;
+      dst[12] = *pixels++;
       dst[15] = 0;
     }
     dst += range.point_step;
