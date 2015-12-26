@@ -172,9 +172,14 @@ bool BodyRosItem::control()
     if (trajectory_index_ < points_.size()) {
       unsigned int joint_size = points_[trajectory_index_].positions.size();
       for (unsigned int i = 0; i < joint_size; ++i) {
-        int j = joint_number_map_[joint_names_[i]];
-        Link* joint = simulationBody->joint(j);
-        joint->q() = points_[trajectory_index_].positions[i];
+        std::map<std::string, int>::const_iterator it = joint_number_map_.find(joint_names_[i]);
+        if (it != joint_number_map_.end()) {
+          int j = (*it).second;
+          Link* joint = simulationBody->joint(j);
+          joint->q() = points_[trajectory_index_].positions[i];
+        } else {
+          ROS_WARN("Unknown joint name: %s", joint_names_[i].c_str());
+        }
       }
       ros::Duration duration(points_[trajectory_index_].time_from_start.sec,
                              points_[trajectory_index_].time_from_start.nsec);
