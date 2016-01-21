@@ -26,11 +26,6 @@ before_install:
   - sudo rosdep init
   - rosdep update
 install:
-  - git clone https://github.com/fkanehiro/simtrans.git
-  - cd simtrans
-  - sudo pip install -r requirements.txt
-  - sudo python setup.py install
-  - cd ../
   - mkdir -p ~/ros/ws_$REPOSITORY_NAME/src
   - cd ~/ros/ws_$REPOSITORY_NAME/src
   - wstool init . $CI_SOURCE_PATH/.rosinstall
@@ -40,6 +35,12 @@ install:
   - catkin init
   - catkin config --install
   - rosdep install --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y
+  - cd ~/
+  - git clone https://github.com/fkanehiro/simtrans.git
+  - cd simtrans
+  - sudo pip install -r requirements.txt
+  - sudo python setup.py install
+  - cd ../
 before_script:
   - source /opt/ros/$ROS_DISTRO/setup.bash  
 script:
