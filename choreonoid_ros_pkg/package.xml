@@ -3,7 +3,7 @@
   <version>1.5.0</version>
   <description>
     Meta package to install choreonoid_ros
-	</description>
+  </description>
   <maintainer email="f-kanehiro@aist.go.jp">Fumio Kanehiro</maintainer>
 
   <license>MIT</license>
@@ -18,12 +18,10 @@
 
   <build_depend>choreonoid_ros</build_depend>
   <build_depend>choreonoid_plugins</build_depend>
-  <build_depend>choreonoid_sdfloader_plugin</build_depend>
   <build_depend>jvrc_models</build_depend>
 
   <run_depend>choreonoid_ros</run_depend>
   <run_depend>choreonoid_plugins</run_depend>
-  <run_depend>choreonoid_sdfloader_plugin</run_depend>
   <run_depend>jvrc_models</run_depend>
   
   <export>
