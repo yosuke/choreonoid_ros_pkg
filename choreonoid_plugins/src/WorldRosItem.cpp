@@ -306,5 +306,13 @@ bool WorldRosItem::deleteModel(gazebo_msgs::DeleteModel::Request &req,
 
 void WorldRosItem::stop()
 {
-  rosnode_->shutdown();
+  if (ros::ok()) {
+    if (async_ros_spin_) {
+      async_ros_spin_->stop();
+    }
+
+    if (rosnode_) {
+      rosnode_->shutdown();
+    }
+  }
 }
