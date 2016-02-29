@@ -40,6 +40,7 @@ BodyRosItem::BodyRosItem(const BodyRosItem& org)
 
 BodyRosItem::~BodyRosItem()
 {
+  stop();
 }
 
 Item* BodyRosItem::doDuplicate() const
@@ -353,8 +354,15 @@ void BodyRosItem::output()
 
 void BodyRosItem::stop()
 {
-  async_ros_spin_->stop();
-  rosnode_->shutdown();
+  if (ros::ok()) {
+    if (async_ros_spin_) {
+      async_ros_spin_->stop();
+    }
+
+    if (rosnode_) {
+      rosnode_->shutdown();
+    }
+  }
 }
 
 void BodyRosItem::callback(const trajectory_msgs::JointTrajectory::ConstPtr& msg)
