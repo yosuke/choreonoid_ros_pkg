@@ -369,16 +369,33 @@ void BodyRosItem::callback(const trajectory_msgs::JointTrajectory::ConstPtr& msg
 {
   // copy all the trajectory info to the buffer
   unsigned int joint_size = msg->joint_names.size();
+
+  // just in case.
+  if (joint_size < 1) {
+    return;
+  }
+
   joint_names_.resize(joint_size);
   for (unsigned int i = 0; i < joint_size; ++i) {
     joint_names_[i] = msg->joint_names[i];
   }
   unsigned int point_size = msg->points.size();
+
+  // just in case.
+  if (point_size < 1) {
+    joint_names_.resize(0);
+    return;
+  }
+
   points_.resize(point_size);
   for (unsigned int i = 0; i < point_size; ++i) {
     points_[i].positions.resize(joint_size);
     for (unsigned int j = 0; j < joint_size; ++j) {
-      points_[i].positions[j] = msg->points[i].positions[j];
+      if (j < msg->points[i].positions.size()) {
+        points_[i].positions[j] = msg->points[i].positions[j];
+      } else {
+        points_[i].positions[j] = 0.0;
+      }
     }
     points_[i].time_from_start = ros::Duration(msg->points[i].time_from_start.sec,
                                                msg->points[i].time_from_start.nsec);
