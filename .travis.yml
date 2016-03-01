@@ -23,6 +23,7 @@ before_install:
   - sudo apt-get install -qq -y python-catkin-tools python-rosdep python-wstool python-setuptools openhrp meshlab imagemagick python-omniorb openrtm-aist-python python-numpy
   - sudo easy_install pip
   - sudo pip install --upgrade pip
+  - sudo pip install enum34
   - sudo rosdep init
   - rosdep update
 install:
