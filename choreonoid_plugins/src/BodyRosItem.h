@@ -19,7 +19,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/Wrench.h>
-#include <trajectory_msgs/JointTrajectory.h>
+
 #include <image_transport/image_transport.h>
 
 #include <vector>
@@ -45,8 +45,6 @@ public:
     virtual bool control();
     virtual void output();
     virtual void stop();
-    
-    void callback(const trajectory_msgs::JointTrajectory::ConstPtr& msg);
     
     const BodyPtr& body() const { return simulationBody; };
     const DeviceList<ForceSensor>& forceSensors() const { return forceSensors_; }
@@ -81,19 +79,6 @@ private:
 
     boost::shared_ptr<ros::NodeHandle> rosnode_;
     boost::shared_ptr<ros::AsyncSpinner> async_ros_spin_;
-    sensor_msgs::JointState joint_state_;
-    ros::Publisher joint_state_publisher_;
-    ros::Subscriber joint_state_subscriber_;
-    double joint_state_update_rate_;
-    double joint_state_update_period_;
-    double joint_state_last_update_;
-    
-    std::map<std::string, int> joint_number_map_;
-    std::vector<std::string> joint_names_;
-    std::vector<trajectory_msgs::JointTrajectoryPoint> points_;
-    double trajectory_start_;
-    unsigned int trajectory_index_;
-    bool has_trajectory_;
  
     std::vector<ros::Publisher> force_sensor_publishers_;
     std::vector<ros::Publisher> rate_gyro_sensor_publishers_;

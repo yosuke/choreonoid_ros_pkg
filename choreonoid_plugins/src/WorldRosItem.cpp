@@ -55,12 +55,12 @@ void WorldRosItem::start()
   
   world = this->findOwnerItem<WorldItem>();
   if (world)
-    ROS_INFO("Found WorldItem: %s", world->name().c_str());
+    ROS_DEBUG("Found WorldItem: %s", world->name().c_str());
   sim = SimulatorItem::findActiveSimulatorItemFor(this);
   if (sim == 0) return;
   
   std::string name = sim->name();
-  ROS_INFO("Found SimulatorItem: %s", name.c_str());
+  ROS_DEBUG("Found SimulatorItem: %s", name.c_str());
   std::replace(name.begin(), name.end(), '-', '_');
   rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(world->name()));
 
@@ -315,4 +315,6 @@ void WorldRosItem::stop()
       rosnode_->shutdown();
     }
   }
+
+  return;
 }

@@ -158,7 +158,16 @@ if(ENABLE_PYTHON)
 endif()
 
 ## Plugins
-add_cnoid_plugin(CnoidRosBodyPlugin SHARED src/RosBodyPlugin.cpp src/BodyRosItem.cpp src/WorldRosItem.cpp)
+add_cnoid_plugin(CnoidRosBodyPlugin
+  SHARED
+  src/RosBodyPlugin.cpp
+  src/BodyRosItem.cpp
+  src/WorldRosItem.cpp
+  src/BodyRosJointControllerItem.cpp
+  src/BodyRosTorqueControllerItem.cpp
+  src/BodyRosHighgainControllerItem.cpp
+)
+
 target_link_libraries(CnoidRosBodyPlugin ${CNOID_LIBRARIES} CnoidBodyPlugin ${catkin_LIBRARIES})
 
 install(TARGETS 

@@ -25,8 +25,6 @@ BodyRosItem::BodyRosItem()
   : os(MessageView::instance()->cout())
 {
   controllerTarget = NULL;
-  has_trajectory_ = false;
-  joint_state_update_rate_ = 100.0;
 }
 
 BodyRosItem::BodyRosItem(const BodyRosItem& org)
@@ -34,8 +32,6 @@ BodyRosItem::BodyRosItem(const BodyRosItem& org)
     os(MessageView::instance()->cout())
 {
   controllerTarget = NULL;
-  has_trajectory_ = false;
-  joint_state_update_rate_ = 100.0;
 }
 
 BodyRosItem::~BodyRosItem()
@@ -50,8 +46,6 @@ Item* BodyRosItem::doDuplicate() const
 
 void BodyRosItem::doPutProperties(PutPropertyFunction& putProperty)
 {
-  putProperty.decimals(2).min(0.0)("Update rate", joint_state_update_rate_,
-                                   changeProperty(joint_state_update_rate_));
 }
 
 bool BodyRosItem::start(Target* target)
@@ -60,19 +54,11 @@ bool BodyRosItem::start(Target* target)
   simulationBody = target->body();
   timeStep_ = target->worldTimeStep();
   controlTime_ = target->currentTime();
-  for (int i = 0; i < simulationBody->numJoints(); i++) {
-    Link* joint = simulationBody->joint(i);
-    joint_number_map_[joint->name()] = i;
-  }
+
   std::string name = simulationBody->name();
   std::replace(name.begin(), name.end(), '-', '_');
   rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(name));
-  joint_state_publisher_ = rosnode_->advertise<sensor_msgs::JointState>("joint_states", 1000);
-  joint_state_subscriber_ = rosnode_->subscribe("set_joint_trajectory", 1000, &BodyRosItem::callback, this);
   createSensors(simulationBody);
-  ROS_INFO("Joint state update rate %f", joint_state_update_rate_);
-  joint_state_update_period_ = 1.0 / joint_state_update_rate_;
-  joint_state_last_update_ = controllerTarget->currentTime();
   async_ros_spin_.reset(new ros::AsyncSpinner(0));
   async_ros_spin_->start();
   
@@ -94,7 +80,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
       force_sensor_publishers_[i] = rosnode_->advertise<geometry_msgs::Wrench>(sensor->name(), 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateForceSensor,
                                                     this, sensor, force_sensor_publishers_[i]));
-      ROS_INFO("Create force sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
+      ROS_DEBUG("Create force sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
     }
   }
   rate_gyro_sensor_publishers_.resize(gyroSensors_.size());
@@ -103,7 +89,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
       rate_gyro_sensor_publishers_[i] = rosnode_->advertise<sensor_msgs::Imu>(sensor->name(), 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateRateGyroSensor,
                                                     this, sensor, rate_gyro_sensor_publishers_[i]));
-      ROS_INFO("Create gyro sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
+      ROS_DEBUG("Create gyro sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
     }
   }
   accel_sensor_publishers_.resize(accelSensors_.size());
@@ -112,7 +98,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
       accel_sensor_publishers_[i] = rosnode_->advertise<sensor_msgs::Imu>(sensor->name(), 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateAccelSensor,
                                                     this, sensor, accel_sensor_publishers_[i]));
-      ROS_INFO("Create accel sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
+      ROS_DEBUG("Create accel sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
     }
   }
   image_transport::ImageTransport it(*rosnode_);
@@ -122,7 +108,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
       vision_sensor_publishers_[i] = it.advertise(sensor->name() + "/image_raw", 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateVisionSensor,
                                                     this, sensor, vision_sensor_publishers_[i]));
-      ROS_INFO("Create vision sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
+      ROS_DEBUG("Create vision sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
     }
   }
   range_vision_sensor_publishers_.resize(rangeVisionSensors_.size());
@@ -131,7 +117,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
       range_vision_sensor_publishers_[i] = rosnode_->advertise<sensor_msgs::PointCloud2>(sensor->name() + "/point_cloud", 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateRangeVisionSensor,
                                                     this, sensor, range_vision_sensor_publishers_[i]));
-      ROS_INFO("Create RGBD sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
+      ROS_DEBUG("Create RGBD sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
     }
   }
   range_sensor_publishers_.resize(rangeSensors_.size());
@@ -140,7 +126,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
       range_sensor_publishers_[i] = rosnode_->advertise<sensor_msgs::LaserScan>(sensor->name(), 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateRangeSensor,
                                                     this, sensor, range_sensor_publishers_[i]));
-      ROS_INFO("Create range sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
+      ROS_DEBUG("Create range sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
     }
   }
 }
@@ -149,47 +135,6 @@ bool BodyRosItem::control()
 {
   controlTime_ = controllerTarget->currentTime();
 
-  double updateSince = controlTime_ - joint_state_last_update_;
-  if (updateSince > joint_state_update_period_) {
-    // publish current joint states
-    joint_state_.header.stamp.fromSec(controlTime_);
-    joint_state_.name.resize(simulationBody->numJoints());
-    joint_state_.position.resize(simulationBody->numJoints());
-    joint_state_.velocity.resize(simulationBody->numJoints());
-    joint_state_.effort.resize(simulationBody->numJoints());
-    for (int i = 0; i < simulationBody->numJoints(); i++) {
-      Link* joint = simulationBody->joint(i);
-      joint_state_.name[i] = joint->name();
-      joint_state_.position[i] = joint->q();
-      joint_state_.velocity[i] = joint->dq();
-      joint_state_.effort[i] = joint->u();
-    }
-    joint_state_publisher_.publish(joint_state_);
-    joint_state_last_update_ += joint_state_update_period_;
-  }
-  
-  // apply joint force based on the trajectory message
-  if (has_trajectory_ && controlTime_ >= trajectory_start_) {
-    if (trajectory_index_ < points_.size()) {
-      unsigned int joint_size = points_[trajectory_index_].positions.size();
-      for (unsigned int i = 0; i < joint_size; ++i) {
-        std::map<std::string, int>::const_iterator it = joint_number_map_.find(joint_names_[i]);
-        if (it != joint_number_map_.end()) {
-          int j = (*it).second;
-          Link* joint = simulationBody->joint(j);
-          joint->q() = points_[trajectory_index_].positions[i];
-        } else {
-          ROS_WARN("Unknown joint name: %s", joint_names_[i].c_str());
-        }
-      }
-      ros::Duration duration(points_[trajectory_index_].time_from_start.sec,
-                             points_[trajectory_index_].time_from_start.nsec);
-      trajectory_start_ += duration.toSec();
-      trajectory_index_++;
-    } else {
-      has_trajectory_ = false;
-    }
-  }
   return true;
 }
 
@@ -239,7 +184,7 @@ void BodyRosItem::updateVisionSensor(Camera* sensor, image_transport::Publisher&
   else if (sensor->image().numComponents() == 1)
     vision.encoding = sensor_msgs::image_encodings::MONO8;
   else {
-    ROS_INFO("unsupported image component number: %i", sensor->image().numComponents());
+    ROS_WARN("unsupported image component number: %i", sensor->image().numComponents());
   }
   vision.is_bigendian = 0;
   vision.step = sensor->image().width() * sensor->image().numComponents();
@@ -363,47 +308,7 @@ void BodyRosItem::stop()
       rosnode_->shutdown();
     }
   }
+
+  return;
 }
 
-void BodyRosItem::callback(const trajectory_msgs::JointTrajectory::ConstPtr& msg)
-{
-  // copy all the trajectory info to the buffer
-  unsigned int joint_size = msg->joint_names.size();
-
-  // just in case.
-  if (joint_size < 1) {
-    return;
-  }
-
-  joint_names_.resize(joint_size);
-  for (unsigned int i = 0; i < joint_size; ++i) {
-    joint_names_[i] = msg->joint_names[i];
-  }
-  unsigned int point_size = msg->points.size();
-
-  // just in case.
-  if (point_size < 1) {
-    joint_names_.resize(0);
-    return;
-  }
-
-  points_.resize(point_size);
-  for (unsigned int i = 0; i < point_size; ++i) {
-    points_[i].positions.resize(joint_size);
-    for (unsigned int j = 0; j < joint_size; ++j) {
-      if (j < msg->points[i].positions.size()) {
-        points_[i].positions[j] = msg->points[i].positions[j];
-      } else {
-        points_[i].positions[j] = 0.0;
-      }
-    }
-    points_[i].time_from_start = ros::Duration(msg->points[i].time_from_start.sec,
-                                               msg->points[i].time_from_start.nsec);
-  }
-  trajectory_start_ = ros::Time(msg->header.stamp.sec,
-                                msg->header.stamp.nsec).toSec();
-  if (trajectory_start_ < controlTime_)
-    trajectory_start_ = controlTime_;
-  trajectory_index_ = 0;
-  has_trajectory_ = true;
-}
