@@ -1,4 +1,11 @@
+/**
+  @file
+  @author
+ */
+
 #include "BodyRosItem.h"
+#include "BodyRosTorqueControllerItem.h"
+#include "BodyRosHighgainControllerItem.h"
 #include "WorldRosItem.h"
 #include <cnoid/Plugin>
 
@@ -11,6 +18,8 @@ public:
   
   virtual bool initialize() {
     BodyRosItem::initialize(this);
+    BodyRosTorqueControllerItem::initialize(this);
+    BodyRosHighgainControllerItem::initialize(this);
     WorldRosItem::initialize(this);
     return true;
   }

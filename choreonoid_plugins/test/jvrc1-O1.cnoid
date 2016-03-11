@@ -300,16 +300,15 @@ items:
           class: AISTSimulatorItem
           data: 
             realtimeSync: true
-            recording: full
-            timeRangeMode: TimeBar range
-            onlyActiveControlPeriod: true
+            recording: "full"
+            timeRangeMode: "Active control period"
             timeLength: 600
             allLinkPositionOutputMode: false
             deviceStateOutput: true
             controllerThreads: true
             recordCollisionData: false
-            dynamicsMode: High-gain dynamics
-            integrationMode: Runge Kutta
+            dynamicsMode: "Forward dynamics"
+            integrationMode: "Runge Kutta"
             gravity: [ 0, 0, -9.80665 ]
             staticFriction: 1
             slipFriction: 1
@@ -370,7 +369,7 @@ items:
               -0.000000, -0.000000, -0.000000,  0.000000, -0.000000, -0.000000, -0.000000,  0.000000, -0.000000,  0.000000, 
                0.000000,  0.000000, -0.000000,  0.000000, -0.000000, -0.000000, -0.000000, -0.000000, -0.000000, -0.000000, 
               -0.000000, -0.000000, -0.000000, -0.000000,  0.000000, -0.000000, -0.000000, -0.000000,  0.000000,  0.000000, 
-               0.000000,  0.000000,  0.000000,  0.000000,  0.000000 ]
+               0.000000,  0.000000,  0.000000,  0.000000 ]
             zmp: [ 0, 0, 0 ]
             collisionDetection: true
             selfCollisionDetection: false
@@ -383,8 +382,15 @@ items:
               class: BodyRosItem
               data: 
                 isImmediateMode: true
+            - 
+              id: 18
+              name: "BodyRosTorqueController"
+              plugin: RosBody
+              class: BodyRosTorqueControllerItem
+              data: 
+                isImmediateMode: true
         - 
-          id: 18
+          id: 19
           name: "WorldRos"
           plugin: RosBody
           class: WorldRosItem
@@ -406,8 +412,7 @@ views:
     class: ItemTreeView
     mounted: true
     state: 
-      selected: [ 16 ]
-      checked: [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18 ]
+      checked: [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19 ]
       expanded: [ 1, 14, 16, 17 ]
   - 
     id: 3
@@ -522,6 +527,8 @@ toolbars:
     speedScale: 1
     syncToOngoingUpdates: true
     autoExpansion: true
+  "BodyBar": 
+    current: 16
   "KinematicsBar": 
     mode: AUTO
     enablePositionDragger: true
@@ -530,8 +537,6 @@ toolbars:
     snapDistance: 0.025
     penetrationBlockDepth: 0.0005
     lazyCollisionDetectionMode: true
-  "BodyBar": 
-    current: 16
   "LeggedBodyBar": 
     stanceWidth: 0.15
   "BodyMotionGenerationBar": 
@@ -647,3 +652,5 @@ Body:
     targetJoints: all
     checkSelfCollisions: true
     onlyTimeBarRange: false
+OpenRTM: 
+  "deleteUnmanagedRTCsOnStartingSimulation": false
