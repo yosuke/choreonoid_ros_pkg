@@ -9,7 +9,7 @@ catkin_package(DEPENDS eigen)
 execute_process(
     COMMAND
     ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}
-    make -f ${PROJECT_SOURCE_DIR}/Makefile.choreonoid INSTALL_DIR=${CATKIN_DEVEL_PREFIX} installed.choreonoid
+    make -f ${PROJECT_SOURCE_DIR}/Makefile.choreonoid INSTALL_DIR=${CATKIN_DEVEL_PREFIX} CMD_SETTING_BUILD_ARGS=${PROJECT_SOURCE_DIR}/setting_build_args.sh installed.choreonoid
     RESULT_VARIABLE
     _make_failed
 )
