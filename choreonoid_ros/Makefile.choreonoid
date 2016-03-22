@@ -11,7 +11,8 @@ installed.choreonoid: $(GIT_DIR)
 	@echo "                 PATH=$(PATH)"
 	@echo "                 INSTALL_DIR=$(INSTALL_DIR)"
 	@echo "                 GIT_DIR=$(GIT_DIR)"
-	cd $(GIT_DIR) && cmake . -DCMAKE_INSTALL_PREFIX=$(INSTALL_DIR) -DENABLE_INSTALL_RPATH=ON -DENABLE_PYTHON=ON && make -j 4 && make install
+	@echo "                 CMD_SETTING_BUILD_ARGS=$(CMD_SETTING_BUILD_ARGS)"
+	cd $(GIT_DIR) && cmake . -DCMAKE_INSTALL_PREFIX=$(INSTALL_DIR) $(shell $(CMD_SETTING_BUILD_ARGS) cmake) && make $(shell $(CMD_SETTING_BUILD_ARGS) make) && make install
 	touch installed.choreonoid
 
 clean.choreonoid:
