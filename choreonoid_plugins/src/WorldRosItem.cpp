@@ -54,8 +54,12 @@ void WorldRosItem::start()
   if (initialized) return;
   
   world = this->findOwnerItem<WorldItem>();
-  if (world)
-    ROS_DEBUG("Found WorldItem: %s", world->name().c_str());
+
+  if (! world) {
+    return;
+  }
+
+  ROS_DEBUG("Found WorldItem: %s", world->name().c_str());
   sim = SimulatorItem::findActiveSimulatorItemFor(this);
   if (sim == 0) return;
   
@@ -307,6 +311,10 @@ bool WorldRosItem::deleteModel(gazebo_msgs::DeleteModel::Request &req,
 void WorldRosItem::stop()
 {
   if (ros::ok()) {
+    if (rosqueue_.isEnabled()) {
+      rosqueue_.clear();
+    }
+
     if (async_ros_spin_) {
       async_ros_spin_->stop();
     }
@@ -314,6 +322,10 @@ void WorldRosItem::stop()
     if (rosnode_) {
       rosnode_->shutdown();
     }
+  }
+
+  if (rosqueue_thread_) {
+    rosqueue_thread_->join();
   }
 
   return;
