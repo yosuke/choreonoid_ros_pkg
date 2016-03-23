@@ -305,9 +305,42 @@ void BodyRosItem::output()
   
 }
 
+void BodyRosItem::stop_publish()
+{
+  size_t i;
+
+  for (i = 0; i < force_sensor_publishers_.size(); i++) {
+    force_sensor_publishers_[i].shutdown();
+  }
+
+  for (i = 0; i < rate_gyro_sensor_publishers_.size(); i++) {
+    rate_gyro_sensor_publishers_[i].shutdown();
+  }
+
+  for (i = 0; i < accel_sensor_publishers_.size(); i++) {
+    accel_sensor_publishers_[i].shutdown();
+  }
+
+  for (i = 0; i < vision_sensor_publishers_.size(); i++) {
+    vision_sensor_publishers_[i].shutdown();
+  }
+
+  for (i = 0; i < range_vision_sensor_publishers_.size(); i++) {
+    range_vision_sensor_publishers_[i].shutdown();
+  }
+
+  for (i = 0; i < range_sensor_publishers_.size(); i++) {
+    range_sensor_publishers_[i].shutdown();
+  }
+
+  return;
+}
+
 void BodyRosItem::stop()
 {
   if (ros::ok()) {
+    stop_publish();
+
     if (async_ros_spin_) {
       async_ros_spin_->stop();
     }
