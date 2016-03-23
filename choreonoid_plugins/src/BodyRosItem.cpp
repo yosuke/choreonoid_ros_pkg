@@ -50,6 +50,14 @@ void BodyRosItem::doPutProperties(PutPropertyFunction& putProperty)
 
 bool BodyRosItem::start(Target* target)
 {
+  if (! target) {
+    MessageView::instance()->putln(MessageView::ERROR, boost::format("Target not found"));
+    return false;
+  } else if (! target->body()) {
+    MessageView::instance()->putln(MessageView::ERROR, boost::format("BodyItem not found"));
+    return false;
+  }
+
   controllerTarget = target;
   simulationBody = target->body();
   timeStep_ = target->worldTimeStep();
