@@ -93,6 +93,12 @@ private:
     void updateVisionSensor(Camera* sensor, image_transport::Publisher& publisher);
     void updateRangeVisionSensor(RangeCamera* sensor, ros::Publisher& publisher);
     void updateRangeSensor(RangeSensor* sensor, ros::Publisher& publisher);
+
+    /**
+      @brief Stop publish.
+      This method call from BodyRosItem::stop.
+     */
+    void stop_publish();
 };
 
 typedef ref_ptr<BodyRosItem> BodyRosItemPtr;
