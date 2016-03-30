@@ -14,7 +14,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 #
 def publish_jvrc1_jointtrajectory(jname='NECK_Y', jdegree=0):
-    rad = float('{0:.4f}'.format(math.radians(float(jdegree))))
+    rad = math.radians(jdegree)
     pub = rospy.Publisher('/JVRC_1/torque_control/set_joint_trajectory', JointTrajectory, latch=True, queue_size=10)
     rospy.init_node('jvrc1_choreonoid_ros_test', anonymous=True)
     msg = JointTrajectory()
@@ -66,7 +66,7 @@ def usage():
     print ''
     print '[joint angle] setting is range from 360.0 to -360.0.'
     print ''
-    print 'e.g. if you want to change the joint angle of the NECK_Y to dgree of 40.'
+    print 'e.g. if you want to change the joint angle of the NECK_Y to degree of 40.'
     print '  ' + name + ' NECK_Y 40.0'
     print ''
 
