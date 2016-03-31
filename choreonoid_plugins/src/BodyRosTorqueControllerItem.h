@@ -8,6 +8,9 @@
 
 #include "BodyRosJointControllerItem.h"
 
+#include <cnoid/YAMLReader>
+#include <cnoid/FileUtil>
+
 namespace cnoid {
 
 class CNOID_EXPORT BodyRosTorqueControllerItem : public BodyRosJointControllerItem
@@ -21,6 +24,10 @@ public:
 
 protected:
     virtual Item* doDuplicate() const;
+    virtual bool store(Archive& archive);
+    virtual bool restore(const Archive& archive);
+    void doPutProperties(PutPropertyFunction& putProperty);
+
     virtual bool hook_of_start();
     virtual void keep_attitude();
     virtual void apply_message(Link* joint, size_t idx, trajectory_msgs::JointTrajectoryPoint* point);
@@ -32,9 +39,25 @@ protected:
                   );
 
 private:
+    std::string pdc_parameter_filename_;
+    std::vector<double> pgain;
+    std::vector<double> dgain;
+    std::vector<double> u_lower;
+    std::vector<double> u_upper;
+
     std::vector<double> qref_old_;
     std::vector<double> q_old_;
 
+    /**
+     */
+    bool set_pdc_parameters(Listing* src, std::vector<double>& dst);
+
+    /**
+     */
+    bool load_pdc_parameters();
+
+    /**
+     */
     void pd_control(Link* joint, double q_ref);
 };
 

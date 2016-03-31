@@ -7,61 +7,6 @@
 
 using namespace cnoid;
 
-#if 1  /* Temporary. */
-/* 
-  these parameters are limited. (for JVRC-1)
-  want to outer setting in the future.
- */
-  
-static const double pgain[] = {
-  50000.0, 30000.0, 30000.0, 30000.0, 30000.0,
-  80000.0, 80000.0, 10000.0, 3000.0,  30000.0,
-  30000.0, 80000.0, 3000.0,  30000.0, 10000.0,
-  3000.0,  3000.0,  30000.0, 30000.0, 10000.0,
-  3000.0,  30000.0, 3000.0,  3000.0,  3000.0,
-  3000.0,  3000.0,  3000.0,  3000.0,  3000.0,
-  3000.0,  3000.0,  10000.0, 3000.0,  3000.0,
-  30000.0, 3000.0,  3000.0,  3000.0,  3000.0,
-  3000.0,  3000.0,  3000.0,  3000.0,
-  };
-  
-static const double dgain[] = {
-  100.0, 100.0, 100.0, 100.0, 100.0,
-  100.0, 100.0, 100.0, 100.0, 100.0,
-  100.0, 100.0, 100.0, 100.0, 100.0,
-  100.0, 100.0, 100.0, 100.0, 100.0,
-  100.0, 100.0, 100.0, 100.0, 100.0,
-  100.0, 100.0, 100.0, 100.0, 100.0,
-  100.0, 100.0, 100.0, 100.0, 100.0,
-  100.0, 100.0, 100.0, 100.0, 100.0,
-  100.0, 100.0, 100.0, 100.0,
-  };
-  
-static const double u_lower[] = {
-  -20.0, -20.0, -20.0, -50.0, -20.0,
-  -50.0, -20.0, -20.0, -20.0, -50.0,
-  -20.0, -50.0, -20.0, -20.0, -20.0,
-  -20.0, -20.0, -20.0, -20.0, -20.0,
-  -20.0, -20.0, -20.0, -20.0, -20.0,
-  -20.0, -20.0, -20.0, -20.0, -20.0,
-  -20.0, -20.0, -20.0, -20.0, -20.0,
-  -20.0, -20.0, -20.0, -20.0, -20.0,
-  -20.0, -20.0, -20.0, -20.0,
-  };
-  
-static const double u_upper[] = {
-  20.0, 20.0, 20.0, 50.0, 20.0,
-  50.0, 20.0, 20.0, 20.0, 50.0,
-  20.0, 50.0, 20.0, 20.0, 20.0,
-  20.0, 20.0, 20.0, 20.0, 20.0,
-  20.0, 20.0, 20.0, 20.0, 20.0,
-  20.0, 20.0, 20.0, 20.0, 20.0,
-  20.0, 20.0, 20.0, 20.0, 20.0,
-  20.0, 20.0, 20.0, 20.0, 20.0,
-  20.0, 20.0, 20.0, 20.0,
-  };
-#endif  /* Temporary. */
-
 void BodyRosTorqueControllerItem::initialize(ExtensionManager* ext) { 
   static bool initialized = false;
   int argc = 0;
@@ -84,6 +29,7 @@ BodyRosTorqueControllerItem::BodyRosTorqueControllerItem()
   control_mode_name_       = "torque_control";
   has_trajectory_          = false;
   joint_state_update_rate_ = 100.0;
+  pdc_parameter_filename_  = "";
 }
 
 BodyRosTorqueControllerItem::BodyRosTorqueControllerItem(const BodyRosTorqueControllerItem& org)
@@ -93,6 +39,7 @@ BodyRosTorqueControllerItem::BodyRosTorqueControllerItem(const BodyRosTorqueCont
   control_mode_name_       = "torque_control";
   has_trajectory_          = false;
   joint_state_update_rate_ = 100.0;
+  pdc_parameter_filename_  = "";
 }
 
 BodyRosTorqueControllerItem::~BodyRosTorqueControllerItem()
@@ -100,9 +47,157 @@ BodyRosTorqueControllerItem::~BodyRosTorqueControllerItem()
   stop();
 }
 
+void BodyRosTorqueControllerItem::doPutProperties(PutPropertyFunction& putProperty)
+{
+  BodyRosJointControllerItem::doPutProperties(putProperty);
+
+  putProperty("PD control parameter file", pdc_parameter_filename_, changeProperty(pdc_parameter_filename_));
+
+  return;
+}
+
 Item* BodyRosTorqueControllerItem::doDuplicate() const
 {
   return new BodyRosTorqueControllerItem(*this);
+}
+
+bool BodyRosTorqueControllerItem::store(Archive& archive)
+{
+  BodyRosJointControllerItem::store(archive);
+
+  if (! pdc_parameter_filename_.empty()) {
+    archive.writeRelocatablePath("pdcParameterFilename", pdc_parameter_filename_);
+  }
+
+  return true;
+}
+
+bool BodyRosTorqueControllerItem::restore(const Archive& archive)
+{
+  BodyRosJointControllerItem::restore(archive);
+
+  archive.readRelocatablePath("pdcParameterFilename", pdc_parameter_filename_);
+
+  return true;
+}
+
+bool BodyRosTorqueControllerItem::set_pdc_parameters(Listing* src, std::vector<double>& dst)
+{
+  if (! src) {
+    return false;
+  }
+
+  for (size_t i = 0; i < src->size(); i++) {
+    try {
+      dst[i] = src->at(i)->toDouble();
+    } catch(const ValueNode::NotScalarException ex) {
+      MessageView::instance()->putln(
+        MessageView::ERROR, boost::format("%1% (%1%)") % ex.message() % pdc_parameter_filename_
+        );
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool BodyRosTorqueControllerItem::load_pdc_parameters()
+{
+  YAMLReader reader = YAMLReader();
+  ValueNode* vnode;
+  Mapping*   mapping;
+  Listing*   listing;
+  bool       result;
+
+  pgain.resize(body()->numJoints());
+  dgain.resize(body()->numJoints());
+  u_lower.resize(body()->numJoints());
+  u_upper.resize(body()->numJoints());
+
+  if (pdc_parameter_filename_.empty()) {
+    MessageView::instance()->putln(MessageView::ERROR, boost::format("'PD control parameter file' is empty"));
+    return false;
+  } else if (! reader.load(pdc_parameter_filename_)) {
+    MessageView::instance()->putln(
+      MessageView::ERROR, 
+      boost::format("PD control parameter file load failed (%1%)") % pdc_parameter_filename_
+      );
+    return false;
+  } else if (reader.numDocuments() != 1) {
+    MessageView::instance()->putln(
+      MessageView::ERROR,
+      boost::format("invalid format found (%1%)") % pdc_parameter_filename_
+      );
+    return false;
+  }
+
+  vnode = reader.document(0);
+
+  if (! vnode) {
+    MessageView::instance()->putln(
+      MessageView::ERROR,
+      boost::format("file is empty (%1%)") % pdc_parameter_filename_
+      );
+    return false;
+  } else if (vnode->nodeType() != ValueNode::MAPPING) {
+    MessageView::instance()->putln(
+      MessageView::ERROR,
+      boost::format("invalid node type found (%1%)") % pdc_parameter_filename_
+      );
+    return false;
+  }
+
+  mapping = vnode->toMapping();
+
+  if (mapping->empty() || mapping->size() != 4) {
+    MessageView::instance()->putln(
+      MessageView::ERROR,
+      boost::format("mismatch of number of the parameters (%1%)") % pdc_parameter_filename_
+      );
+    return false;
+  }
+
+  for (Mapping::const_iterator it = mapping->begin(); it != mapping->end(); it++) {
+    if (it->second->nodeType() != ValueNode::LISTING) {
+      MessageView::instance()->putln(
+        MessageView::ERROR,
+        boost::format("invalid node type found (%1%)") % pdc_parameter_filename_
+        );
+      return false;
+    }
+
+    listing = it->second->toListing();
+
+    if (listing->size() != body()->numJoints()) {
+      MessageView::instance()->putln(
+        MessageView::ERROR,
+        boost::format("joint size mismatch (%1%: %2% joint: %3%)") % it->first % listing->size() % body()->numJoints()
+        );
+      return false;
+    }
+
+    if (it->first == "pgain") {
+      result = set_pdc_parameters(listing, pgain);
+    } else if (it->first == "dgain") {
+      result = set_pdc_parameters(listing, dgain);
+    } else if (it->first == "u_lower") {
+      result = set_pdc_parameters(listing, u_lower);
+    } else if (it->first == "u_upper") {
+      result = set_pdc_parameters(listing, u_upper);
+    } else {
+      MessageView::instance()->putln(
+        MessageView::ERROR,
+        boost::format("invalid key found %1%") % it->first
+        );
+      return false;
+    }
+
+    if (! result) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 bool BodyRosTorqueControllerItem::hook_of_start()
@@ -111,37 +206,9 @@ bool BodyRosTorqueControllerItem::hook_of_start()
   ROS_DEBUG("%s: Called.", __PRETTY_FUNCTION__);
 #endif  /* DEBUG_ROS_JOINT_CONTROLLER */
 
-#if 1  /* Temporary. */
-  size_t i;
-
-  i = sizeof(pgain) / sizeof(double);
-
-  if (i != body()->numJoints()) {
-    ROS_ERROR("Size mismatch. (pgain %d joint %d)", i, body()->numJoints());
+  if (! load_pdc_parameters()) {
     return false;
   }
-
-  i = sizeof(dgain) / sizeof(double);
-
-  if (i != body()->numJoints()) {
-    ROS_ERROR("Size mismatch. (dgain %d joint %d)", i, body()->numJoints());
-    return false;
-  }
-
-  i = sizeof(u_lower) / sizeof(double);
-
-  if (i != body()->numJoints()) {
-    ROS_ERROR("Size mismatch. (u_lower %d joint %d)", i, body()->numJoints());
-    return false;
-  }
-
-  i = sizeof(u_upper) / sizeof(double);
-
-  if (i != body()->numJoints()) {
-    ROS_ERROR("Size mismatch. (u_upper %d joint %d)", i, body()->numJoints());
-    return false;
-  }
-#endif  /* Temporary. */
 
   qref_old_.resize(body()->numJoints());
   q_old_.resize(body()->numJoints());

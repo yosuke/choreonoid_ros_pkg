@@ -34,7 +34,6 @@ public:
     BodyRosItem();
     BodyRosItem(const BodyRosItem& org);
     virtual ~BodyRosItem();
-    void doPutProperties(PutPropertyFunction& putProperty);
     bool createSensors(BodyPtr body);
     
     virtual bool start(Target* target);
@@ -60,7 +59,8 @@ public:
 
 protected:
     virtual Item* doDuplicate() const;
-        
+    void doPutProperties(PutPropertyFunction& putProperty);
+
 private:
     BodyPtr simulationBody;
     DeviceList<ForceSensor> forceSensors_;

@@ -307,6 +307,7 @@ items:
             deviceStateOutput: true
             controllerThreads: true
             recordCollisionData: false
+            controllerOptions: ""
             dynamicsMode: "Forward dynamics"
             integrationMode: "Runge Kutta"
             gravity: [ 0, 0, -9.80665 ]
@@ -382,13 +383,15 @@ items:
               class: BodyRosItem
               data: 
                 isImmediateMode: true
+                controllerOptions: ""
             - 
               id: 18
               name: "BodyRosTorqueController"
               plugin: RosBody
               class: BodyRosTorqueControllerItem
               data: 
-                isImmediateMode: true
+                jointStateUpdateRate: 100
+                pdcParameterFilename: "jvrc1-pdc-parameters.yml"
         - 
           id: 19
           name: "WorldRos"
@@ -412,7 +415,8 @@ views:
     class: ItemTreeView
     mounted: true
     state: 
-      checked: [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19 ]
+      selected: [ 1 ]
+      checked: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
       expanded: [ 1, 14, 16, 17 ]
   - 
     id: 3
@@ -527,8 +531,6 @@ toolbars:
     speedScale: 1
     syncToOngoingUpdates: true
     autoExpansion: true
-  "BodyBar": 
-    current: 16
   "KinematicsBar": 
     mode: AUTO
     enablePositionDragger: true
@@ -537,6 +539,8 @@ toolbars:
     snapDistance: 0.025
     penetrationBlockDepth: 0.0005
     lazyCollisionDetectionMode: true
+  "BodyBar": 
+    current: 16
   "LeggedBodyBar": 
     stanceWidth: 0.15
   "BodyMotionGenerationBar": 
@@ -652,5 +656,3 @@ Body:
     targetJoints: all
     checkSelfCollisions: true
     onlyTimeBarRange: false
-OpenRTM: 
-  "deleteUnmanagedRTCsOnStartingSimulation": false

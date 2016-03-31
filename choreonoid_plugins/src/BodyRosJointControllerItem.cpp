@@ -41,6 +41,20 @@ void BodyRosJointControllerItem::doPutProperties(PutPropertyFunction& putPropert
   putProperty.decimals(2).min(0.0)("Update rate", joint_state_update_rate_, changeProperty(joint_state_update_rate_));
 }
 
+bool BodyRosJointControllerItem::store(Archive& archive)
+{
+  archive.write("jointStateUpdateRate", joint_state_update_rate_);
+
+  return true;
+}
+
+bool BodyRosJointControllerItem::restore(const Archive& archive)
+{
+  archive.read("jointStateUpdateRate", joint_state_update_rate_);
+
+  return true;
+}
+
 bool BodyRosJointControllerItem::hook_of_start()
 {
 #if (DEBUG_ROS_JOINT_CONTROLLER > 0)
