@@ -10,6 +10,7 @@
 #include <cnoid/Body>
 #include <cnoid/BodyItem>
 #include <cnoid/Link>
+#include <cnoid/Archive>
 #include <cnoid/ItemManager>
 #include <cnoid/MessageView>
 #include "exportdecl.h"
@@ -45,8 +46,6 @@ public:
      */
     virtual ~BodyRosJointControllerItem();
 
-    void doPutProperties(PutPropertyFunction& putProperty);
-
     virtual bool start(Target* target);
 
     virtual double timeStep() const {
@@ -78,6 +77,9 @@ public:
 
 protected:
     virtual Item* doDuplicate() const;
+    virtual bool store(Archive& archive);
+    virtual bool restore(const Archive& archive);
+    void doPutProperties(PutPropertyFunction& putProperty);
 
     BodyPtr simulationBody;
     double timeStep_;
