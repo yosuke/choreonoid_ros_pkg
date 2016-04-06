@@ -275,7 +275,7 @@ void BodyRosTorqueControllerItem::pd_control(Link* joint, double q_ref)
     dq = joint->dq_upper();
   }
 
-  u = (q_ref - q) * pgain[i] / 100.0 + (dq_ref - dq) * dgain[i] / 100.0;
+  u = (q_ref - q) * pgain[i] + (dq_ref - dq) * dgain[i];
 
   if (! isnan(u)) {
     if (u < u_lower[i]) {
