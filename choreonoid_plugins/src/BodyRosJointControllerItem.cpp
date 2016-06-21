@@ -169,23 +169,28 @@ bool BodyRosJointControllerItem::control()
 
   // apply joint force based on the trajectory message
   if (has_trajectory_ && controlTime_ >= trajectory_start_) {
-    if (trajectory_index_ < points_.size()) {
-      unsigned int joint_size = joint_names_.size();
+#if (DEBUG_ROS_JOINT_CONTROLLER > 0)
+    ROS_INFO("%s: control time: %f trajectory start: %f", __FUNCTION__, controlTime_, trajectory_start_);
+#endif  /* DEBUG_ROS_JOINT_CONTROLLER */
 
-      for (size_t i = 0; i < joint_size; ++i) {
-        std::map<std::string, int>::const_iterator it = joint_number_map_.find(joint_names_[i]);
+    unsigned int joint_size = joint_names_.size();
 
-        if (it != joint_number_map_.end()) {
-          apply_message(body()->joint((*it).second), i, &points_[ trajectory_index_ ]);
-        } else {
-          ROS_WARN("Unknown joint name: %s", joint_names_[i].c_str());
-        }
+    for (size_t i = 0; i < joint_size; ++i) {
+      std::map<std::string, int>::const_iterator it = joint_number_map_.find(joint_names_[i]);
+
+      if (it != joint_number_map_.end()) {
+        apply_message(body()->joint((*it).second), i, &points_[ trajectory_index_ ]);
+      } else {
+        ROS_WARN("Unknown joint name: %s", joint_names_[i].c_str());
       }
+    }
 
+    trajectory_index_++;
+
+    if (trajectory_index_ < points_.size()) {
       ros::Duration duration(points_[trajectory_index_].time_from_start.sec,
                              points_[trajectory_index_].time_from_start.nsec);
-      trajectory_start_ += duration.toSec();
-      trajectory_index_++;
+      trajectory_start_ = trajectory_timestamp_ + duration.toSec();
     } else {
       has_trajectory_ = false;
     }
@@ -285,14 +290,23 @@ void BodyRosJointControllerItem::receive_message(const trajectory_msgs::JointTra
     }
   }
 
-  trajectory_start_ = ros::Time(msg->header.stamp.sec, msg->header.stamp.nsec).toSec();
+  trajectory_timestamp_ = ros::Time(msg->header.stamp.sec, msg->header.stamp.nsec).toSec();
 
-  if (trajectory_start_ < controlTime_) {
-    trajectory_start_ = controlTime_;
+  if (trajectory_timestamp_ < controlTime_) {
+    trajectory_timestamp_ = controlTime_;
   }
 
   trajectory_index_ = 0;
   has_trajectory_ = true;
+
+  /*
+    INFO: this code is temporary fixes.
+    if the correct, start with only timestamp.
+    refine this controller and at the same time, correct this code.
+   */
+  ros::Duration duration(points_[trajectory_index_].time_from_start.sec,
+                         points_[trajectory_index_].time_from_start.nsec);
+  trajectory_start_ = trajectory_timestamp_ + duration.toSec();
 
   end_copy_message();
 

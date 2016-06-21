@@ -108,6 +108,7 @@ protected:
     std::map<std::string, int> joint_number_map_;
     std::vector<std::string> joint_names_;
     std::vector<trajectory_msgs::JointTrajectoryPoint> points_;
+    double trajectory_timestamp_;
     double trajectory_start_;
     unsigned int trajectory_index_;
     bool has_trajectory_;
