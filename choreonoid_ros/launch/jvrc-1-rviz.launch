@@ -5,7 +5,7 @@
     <arg name="PROJECT_FILE" default="$(find choreonoid_plugins)/test/jvrc1-O1.cnoid" />
   </include>
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="jvrc_1_state_publisher" >
-    <remap from="joint_states" to="/JVRC_1/torque_control/joint_states" />
+    <remap from="joint_states" to="/JVRC_1/joint_states" />
   </node>
   <node name="jvrc_1_rviz" pkg="rviz" type="rviz" respawn="true"
         args="-sync -d $(find choreonoid_ros)/launch/jvrc-1.rviz" />

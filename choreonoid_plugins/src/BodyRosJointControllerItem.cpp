@@ -13,7 +13,6 @@ BodyRosJointControllerItem::BodyRosJointControllerItem()
   controllerTarget         = 0;
   control_mode_name_       = "";
   has_trajectory_          = false;
-  joint_state_update_rate_ = 100.0;
 }
 
 BodyRosJointControllerItem::BodyRosJointControllerItem(const BodyRosJointControllerItem& org)
@@ -23,7 +22,6 @@ BodyRosJointControllerItem::BodyRosJointControllerItem(const BodyRosJointControl
   controllerTarget         = 0;
   control_mode_name_       = "";
   has_trajectory_          = false;
-  joint_state_update_rate_ = 100.0;
 }
 
 BodyRosJointControllerItem::~BodyRosJointControllerItem()
@@ -38,20 +36,16 @@ Item* BodyRosJointControllerItem::doDuplicate() const
 
 void BodyRosJointControllerItem::doPutProperties(PutPropertyFunction& putProperty)
 {
-  putProperty.decimals(2).min(0.0)("Update rate", joint_state_update_rate_, changeProperty(joint_state_update_rate_));
+  return;
 }
 
 bool BodyRosJointControllerItem::store(Archive& archive)
 {
-  archive.write("jointStateUpdateRate", joint_state_update_rate_);
-
   return true;
 }
 
 bool BodyRosJointControllerItem::restore(const Archive& archive)
 {
-  archive.read("jointStateUpdateRate", joint_state_update_rate_);
-
   return true;
 }
 
@@ -86,22 +80,10 @@ bool BodyRosJointControllerItem::start(Target* target)
   timeStep_        = target->worldTimeStep();
   controlTime_     = target->currentTime();
 
-  // buffer of preserve currently state of joints.
-  joint_state_.header.stamp.fromSec(controlTime_);
-  joint_state_.name.resize(body()->numJoints());
-  joint_state_.position.resize(body()->numJoints());
-  joint_state_.velocity.resize(body()->numJoints());
-  joint_state_.effort.resize(body()->numJoints());
-
-  // preserve initial state of joints.
   for (size_t i = 0; i < body()->numJoints(); i++) {
     Link* joint = body()->joint(i);
 
     joint_number_map_[ joint->name() ] = i;
-    joint_state_.name[i]               = joint->name();
-    joint_state_.position[i]           = joint->q();
-    joint_state_.velocity[i]           = joint->dq();
-    joint_state_.effort[i]             = joint->u();
   }
 
   std::string name = body()->name();
@@ -113,15 +95,9 @@ bool BodyRosJointControllerItem::start(Target* target)
 
   rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(name));
 
-  topic_name                 = control_mode_name_ + "/joint_states";
-  joint_state_publisher_     = rosnode_->advertise<sensor_msgs::JointState>(topic_name, 1000);
   topic_name                 = control_mode_name_ + "/set_joint_trajectory";
   joint_state_subscriber_    = rosnode_->subscribe(
                                           topic_name, 1000, &BodyRosJointControllerItem::receive_message, this);
-  joint_state_update_period_ = 1.0 / joint_state_update_rate_;
-  joint_state_last_update_   = controllerTarget->currentTime();
-
-  ROS_DEBUG("Joint state update rate %f", joint_state_update_rate_);
 
   async_ros_spin_.reset(new ros::AsyncSpinner(0));
   async_ros_spin_->start();
@@ -150,22 +126,6 @@ void BodyRosJointControllerItem::keep_attitude()
 bool BodyRosJointControllerItem::control()
 {
   controlTime_ = controllerTarget->currentTime();
-  double updateSince = controlTime_ - joint_state_last_update_;
-
-  if (updateSince > joint_state_update_period_) {
-    // publish current joint states
-    joint_state_.header.stamp.fromSec(controlTime_);
-
-    for (int i = 0; i < body()->numJoints(); i++) {
-      Link* joint = body()->joint(i);
-      joint_state_.position[i] = joint->q();
-      joint_state_.velocity[i] = joint->dq();
-      joint_state_.effort[i] = joint->u();
-    }
-
-    joint_state_publisher_.publish(joint_state_);
-    joint_state_last_update_ += joint_state_update_period_;
-  }
 
   // apply joint force based on the trajectory message
   if (has_trajectory_ && controlTime_ >= trajectory_start_) {
