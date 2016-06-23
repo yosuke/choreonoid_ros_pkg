@@ -25,6 +25,7 @@ BodyRosItem::BodyRosItem()
   : os(MessageView::instance()->cout())
 {
   controllerTarget = NULL;
+  joint_state_update_rate_ = 100.0;
 }
 
 BodyRosItem::BodyRosItem(const BodyRosItem& org)
@@ -32,6 +33,7 @@ BodyRosItem::BodyRosItem(const BodyRosItem& org)
     os(MessageView::instance()->cout())
 {
   controllerTarget = NULL;
+  joint_state_update_rate_ = 100.0;
 }
 
 BodyRosItem::~BodyRosItem()
@@ -44,8 +46,23 @@ Item* BodyRosItem::doDuplicate() const
   return new BodyRosItem(*this);
 }
 
+bool BodyRosItem::store(Archive& archive)
+{
+  archive.write("jointStateUpdateRate", joint_state_update_rate_);
+
+  return true;
+}
+
+bool BodyRosItem::restore(const Archive& archive)
+{
+  archive.read("jointStateUpdateRate", joint_state_update_rate_);
+
+  return true;
+}
+
 void BodyRosItem::doPutProperties(PutPropertyFunction& putProperty)
 {
+  putProperty.decimals(2).min(0.0)("Update rate", joint_state_update_rate_, changeProperty(joint_state_update_rate_));
 }
 
 bool BodyRosItem::start(Target* target)
@@ -63,10 +80,33 @@ bool BodyRosItem::start(Target* target)
   timeStep_ = target->worldTimeStep();
   controlTime_ = target->currentTime();
 
+  // buffer of preserve currently state of joints.
+  joint_state_.header.stamp.fromSec(controlTime_);
+  joint_state_.name.resize(body()->numJoints());
+  joint_state_.position.resize(body()->numJoints());
+  joint_state_.velocity.resize(body()->numJoints());
+  joint_state_.effort.resize(body()->numJoints());
+
+  // preserve initial state of joints.
+  for (size_t i = 0; i < body()->numJoints(); i++) {
+    Link* joint = body()->joint(i);
+
+    joint_state_.name[i]     = joint->name();
+    joint_state_.position[i] = joint->q();
+    joint_state_.velocity[i] = joint->dq();
+    joint_state_.effort[i]   = joint->u();
+  }
+
   std::string name = simulationBody->name();
   std::replace(name.begin(), name.end(), '-', '_');
   rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(name));
   createSensors(simulationBody);
+
+  joint_state_publisher_     = rosnode_->advertise<sensor_msgs::JointState>("joint_states", 1000);
+  joint_state_update_period_ = 1.0 / joint_state_update_rate_;
+  joint_state_last_update_   = controllerTarget->currentTime();
+  ROS_DEBUG("Joint state update rate %f", joint_state_update_rate_);
+
   async_ros_spin_.reset(new ros::AsyncSpinner(0));
   async_ros_spin_->start();
   
@@ -142,6 +182,23 @@ bool BodyRosItem::createSensors(BodyPtr body)
 bool BodyRosItem::control()
 {
   controlTime_ = controllerTarget->currentTime();
+  double updateSince = controlTime_ - joint_state_last_update_;
+
+  if (updateSince > joint_state_update_period_) {
+    // publish current joint states
+    joint_state_.header.stamp.fromSec(controlTime_);
+
+    for (int i = 0; i < body()->numJoints(); i++) {
+      Link* joint = body()->joint(i);
+
+      joint_state_.position[i] = joint->q();
+      joint_state_.velocity[i] = joint->dq();
+      joint_state_.effort[i]   = joint->u();
+    }
+
+    joint_state_publisher_.publish(joint_state_);
+    joint_state_last_update_ += joint_state_update_period_;
+  }
 
   return true;
 }

@@ -28,7 +28,6 @@ BodyRosTorqueControllerItem::BodyRosTorqueControllerItem()
   controllerTarget         = 0;
   control_mode_name_       = "torque_control";
   has_trajectory_          = false;
-  joint_state_update_rate_ = 100.0;
   pdc_parameter_filename_  = "";
 }
 
@@ -38,7 +37,6 @@ BodyRosTorqueControllerItem::BodyRosTorqueControllerItem(const BodyRosTorqueCont
   controllerTarget         = 0;
   control_mode_name_       = "torque_control";
   has_trajectory_          = false;
-  joint_state_update_rate_ = 100.0;
   pdc_parameter_filename_  = "";
 }
 

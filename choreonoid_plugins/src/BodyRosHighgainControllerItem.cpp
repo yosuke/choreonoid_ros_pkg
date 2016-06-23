@@ -28,7 +28,6 @@ BodyRosHighgainControllerItem::BodyRosHighgainControllerItem()
   controllerTarget         = 0;
   control_mode_name_       = "highgain_control";
   has_trajectory_          = false;
-  joint_state_update_rate_ = 100.0;
 }
 
 BodyRosHighgainControllerItem::BodyRosHighgainControllerItem(const BodyRosHighgainControllerItem& org)
@@ -37,7 +36,6 @@ BodyRosHighgainControllerItem::BodyRosHighgainControllerItem(const BodyRosHighga
   controllerTarget         = 0;
   control_mode_name_       = "highgain_control";
   has_trajectory_          = false;
-  joint_state_update_rate_ = 100.0;
 }
 
 BodyRosHighgainControllerItem::~BodyRosHighgainControllerItem()

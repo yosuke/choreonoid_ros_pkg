@@ -9,6 +9,7 @@
 #include <cnoid/Camera>
 #include <cnoid/RangeCamera>
 #include <cnoid/RangeSensor>
+#include <cnoid/Archive>
 #include "exportdecl.h"
 
 #include <ros/ros.h>
@@ -59,6 +60,8 @@ public:
 
 protected:
     virtual Item* doDuplicate() const;
+    virtual bool store(Archive& archive);
+    virtual bool restore(const Archive& archive);
     void doPutProperties(PutPropertyFunction& putProperty);
 
 private:
@@ -70,6 +73,13 @@ private:
     DeviceList<RangeCamera> rangeVisionSensors_;
     DeviceList<RangeSensor> rangeSensors_;
     double timeStep_;
+
+    /* joint states */
+    sensor_msgs::JointState joint_state_;
+    ros::Publisher joint_state_publisher_;
+    double joint_state_update_rate_;
+    double joint_state_update_period_;
+    double joint_state_last_update_;
 
     const Target* controllerTarget;
     double controlTime_;
