@@ -26,6 +26,7 @@ before_install:
   - sudo easy_install pip
   - sudo pip install --upgrade pip
   - sudo pip install enum34
+  - sudo pip install catkin_pkg
   - sudo rosdep init
   - rosdep update
 install:
