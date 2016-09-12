@@ -159,7 +159,7 @@ void WorldRosItem::publishLinkStates()
 
   Item* item = world->childItem();
   while(item) {
-    BodyItem* body = boost::dynamic_pointer_cast<BodyItem>(item);
+    BodyItem* body = dynamic_cast<BodyItem*>(item);
     if (body) {
       for (int i = 0; i < body->body()->numLinks(); i++) {
         Link* link = body->body()->link(i);
@@ -197,7 +197,7 @@ void WorldRosItem::publishModelStates()
 
   Item* item = world->childItem();
   while(item) {
-    BodyItem* body = boost::dynamic_pointer_cast<BodyItem>(item);
+    BodyItem* body = dynamic_cast<BodyItem*>(item);
     if (body) {
       model_states.name.push_back(body->name());
       Link* link = body->body()->rootLink();
