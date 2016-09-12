@@ -20,7 +20,7 @@ before_install:
   - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
   - sudo add-apt-repository ppa:hrg/daily -y
   - sudo apt-get update -qq
-  - sudo apt-get install -qq -y python-catkin-tools python-rosdep python-wstool python-setuptools openhrp meshlab imagemagick python-omniorb openrtm-aist-python python-numpy
+  - sudo apt-get install -qq -y python-catkin-pkg python-catkin-tools python-rosdep python-wstool python-setuptools openhrp meshlab imagemagick python-omniorb openrtm-aist-python python-numpy
   - sudo easy_install pip
   - sudo pip install --upgrade pip
   - sudo pip install enum34
