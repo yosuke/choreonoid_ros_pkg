@@ -1,4 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
+cmake_policy(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION})
+
+if (CMAKE_VERSION VERSION_GREATER "2.9.9.9")
+  cmake_policy(SET CMP0037 OLD)
+endif()
+
 project(choreonoid_plugins)
 
 find_package(catkin REQUIRED COMPONENTS 
@@ -28,7 +34,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 include (FindPkgConfig)
-set(ENV{PKG_CONFIG_PATH} $ENV{PKG_CONFIG_PATH}:${CATKIN_DEVEL_PREFIX}/lib/pkgconfig)
+set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${CATKIN_DEVEL_PREFIX}/lib/pkgconfig")
 if (PKG_CONFIG_FOUND)
   pkg_check_modules(CNOID REQUIRED choreonoid)
 else()
