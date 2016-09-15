@@ -1,5 +1,11 @@
 # http://ros.org/doc/hydro/api/catkin/html/user_guide/supposed.html
 cmake_minimum_required(VERSION 2.8.3)
+cmake_policy(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION})
+
+if (CMAKE_VERSION VERSION_GREATER "2.9.9.9")
+  cmake_policy(SET CMP0037 OLD)
+endif()
+
 project(choreonoid_ros)
 
 find_package(catkin REQUIRED COMPONENTS mk)

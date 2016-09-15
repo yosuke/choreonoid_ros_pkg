@@ -14,14 +14,14 @@ before_install:
   - export CI_SOURCE_PATH=$(pwd)
   - export REPOSITORY_NAME=${PWD##*/}
   - echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
-  - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
-  - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+  - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+  - sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net --recv-key 0xB01FA116
   - sudo add-apt-repository ppa:hrg/daily -y
   - sudo apt-get update -qq
-  - sudo apt-get install -qq -y python-catkin-pkg python-catkin-tools python-rosdep python-wstool python-setuptools openhrp meshlab imagemagick python-omniorb openrtm-aist-python python-numpy
+  - sudo apt-get install -qq -y python-catkin-tools python-rosdep python-wstool python-setuptools openhrp meshlab imagemagick python-omniorb openrtm-aist-python python-numpy
   - sudo easy_install pip
-  - sudo pip install --upgrade pip
-  - sudo pip install enum34
+  - sudo -H pip install --upgrade pip
+  - sudo -H pip install enum34
   - sudo rosdep init
   - rosdep update
 install:
@@ -32,12 +32,12 @@ install:
   - ln -s $CI_SOURCE_PATH .
   - cd ../
   - catkin init
-  - catkin config --install
+  - catkin config --merge-devel --install
   - rosdep install --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y
   - cd ~/
   - git clone https://github.com/fkanehiro/simtrans.git
   - cd simtrans
-  - sudo pip install -r requirements.txt
+  - sudo -H pip install -r requirements.txt
   - sudo python setup.py install
   - cd ../
 before_script:
