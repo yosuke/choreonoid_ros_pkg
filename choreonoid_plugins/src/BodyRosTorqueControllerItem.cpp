@@ -252,12 +252,6 @@ void BodyRosTorqueControllerItem::pd_control(Link* joint, double q_ref)
   if (isnan(dq_ref)) {
     ROS_ERROR("Calculate dq_ref, result is NaN (%s)", joint->name().c_str());
     goto done;
-  } else if (dq_ref < joint->dq_lower()) {
-    ROS_DEBUG("Calculate dq_ref, result is over lower limt. (adjust %f -> %f)", dq_ref, joint->dq_lower());
-    dq_ref = joint->dq_lower();
-  } else if (dq_ref > joint->dq_upper()) {
-    ROS_DEBUG("Calculate dq_ref, result is over upper limt. (adjust %f -> %f)", dq_ref, joint->dq_upper());
-    dq_ref = joint->dq_upper();
   }
 
   dq = (q - q_old_[i]) / timeStep_;
@@ -265,12 +259,6 @@ void BodyRosTorqueControllerItem::pd_control(Link* joint, double q_ref)
   if (isnan(dq)) {
     ROS_ERROR("Calculate dq, result is NaN (%s)", joint->name().c_str());
     goto done;
-  } else if (dq < joint->dq_lower()) {
-    ROS_DEBUG("Calculate dq, result is over lower limt. (adjust %f -> %f)", dq, joint->dq_lower());
-    dq = joint->dq_lower();
-  } else if (dq > joint->dq_upper()) {
-    ROS_DEBUG("Calculate dq, result is over upper limt. (adjust %f -> %f)", dq, joint->dq_upper());
-    dq = joint->dq_upper();
   }
 
   u = (q_ref - q) * pgain[i] + (dq_ref - dq) * dgain[i];
