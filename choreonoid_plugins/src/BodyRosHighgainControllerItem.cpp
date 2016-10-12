@@ -1,5 +1,5 @@
 /**
-  @file
+  @file BodyRosHighgainControllerItem.cpp
   @author
  */
 
@@ -67,17 +67,15 @@ void BodyRosHighgainControllerItem::apply_message(Link* joint, size_t idx, traje
     return;
   }
 
-  ROS_DEBUG("----- %s (joint id %d) -----", joint->name().c_str(), joint->jointId());
-
   i = joint->jointId();
   q = point->positions[idx];
 
   if (isnan(q)) {
-    ROS_ERROR("Joint angle setting is NaN (%s)", joint->name().c_str());
+    ROS_ERROR("joint id %03d (%s): joint angle setting is NaN", joint->jointId(), joint->name().c_str());
     return;
   } else if (q < joint->q_lower() || q > joint->q_upper()) {
-    ROS_ERROR("Joint angle setting is over limit (%s: lower %f upper %f set %f)",
-              joint->name().c_str(), joint->q_lower(), joint->q_upper(), q);
+    ROS_ERROR("joint id %03d (%s): joint angle setting is over limit (lower %f upper %f set %f)",
+              joint->jointId(), joint->name().c_str(), joint->q_lower(), joint->q_upper(), q);
     return;
   }
 
@@ -88,34 +86,24 @@ void BodyRosHighgainControllerItem::apply_message(Link* joint, size_t idx, traje
   }
 
   if (isnan(dq)) {
-    ROS_ERROR("Joint velocity setting is NaN (%s)", joint->name().c_str());
+    ROS_ERROR("joint id %03d (%s): calculate joint velocity, result is NaN", joint->jointId(), joint->name().c_str());
     return;
-  } else if (dq < joint->dq_lower()) {
-    ROS_DEBUG("Calculate dq, result is over lower limt. (adjust %f -> %f)", dq, joint->dq_lower());
-    dq = joint->dq_lower();
-  } else if (dq > joint->dq_upper()) {
-    ROS_DEBUG("Calculate dq, result is over upper limt. (adjust %f -> %f)", dq, joint->dq_upper());
-    dq = joint->dq_upper();
   }
 
   if (point->accelerations.size() > 0) {
     ddq = point->accelerations[idx];
   } else {
-    ddq = (q - joint->q()) / timeStep2_;
+    ddq = dq / timeStep_;
   }
 
   if (isnan(ddq)) {
-    ROS_ERROR("Joint acceleration setting is NaN (%s)", joint->name().c_str());
+    ROS_ERROR("joint id %03d (%s): calculate joint acceleration, result is NaN",
+              joint->jointId(), joint->name().c_str());
     return;
-  } else if (ddq < joint->dq_lower()) {
-    ROS_DEBUG("Calculate ddq, result is over lower limt. (adjust %f -> %f)", ddq, joint->dq_lower());
-    ddq = joint->dq_lower();
-  } else if (ddq > joint->dq_upper()) {
-    ROS_DEBUG("Calculate ddq, result is over lower limt. (adjust %f -> %f)", ddq, joint->dq_lower());
-    ddq = joint->dq_upper();
   }
 
-  ROS_DEBUG("q %f dq %f ddq %f q_old %f", q, dq, ddq, joint->q());
+  ROS_DEBUG("joint id %03d (%s): q %f dq %f ddq %f q (current) %f",
+            joint->jointId(), joint->name().c_str(), q, dq, ddq, joint->q());
 
   joint->q()   = q;
   joint->dq()  = dq;
