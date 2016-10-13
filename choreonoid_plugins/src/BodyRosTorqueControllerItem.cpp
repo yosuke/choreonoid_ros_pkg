@@ -233,31 +233,29 @@ void BodyRosTorqueControllerItem::pd_control(Link* joint, double q_ref)
     return;
   }
 
-  ROS_DEBUG("----- %s (joint id %d) -----", joint->name().c_str(), joint->jointId());
-
   i = joint->jointId();
   q = joint->q();
 
   if (isnan(q_ref)) {
-    ROS_ERROR("Joint angle setting is NaN (%s)", joint->name().c_str());
+    ROS_ERROR("joint id %03d (%s): joint angle setting is NaN", joint->jointId(), joint->name().c_str());
     goto done;
   } else if (q_ref < joint->q_lower() || q_ref > joint->q_upper()) {
-    ROS_ERROR("Joint angle setting is over limit (%s: lower %f upper %f set %f)",
-              joint->name().c_str(), joint->q_lower(), joint->q_upper(), q_ref);
+    ROS_ERROR("joint id %03d (%s): joint angle setting is over limit (lower %f upper %f set %f)",
+              joint->jointId(), joint->name().c_str(), joint->q_lower(), joint->q_upper(), q_ref);
     goto done;
   } 
 
   dq_ref = (q_ref - qref_old_[i]) / timeStep_;
 
   if (isnan(dq_ref)) {
-    ROS_ERROR("Calculate dq_ref, result is NaN (%s)", joint->name().c_str());
+    ROS_ERROR("joint id %03d (%s): calculate dq_ref, result is NaN", joint->jointId(), joint->name().c_str());
     goto done;
   }
 
   dq = (q - q_old_[i]) / timeStep_;
 
   if (isnan(dq)) {
-    ROS_ERROR("Calculate dq, result is NaN (%s)", joint->name().c_str());
+    ROS_ERROR("joint id %03d (%s): calculate dq, result is NaN", joint->jointId(), joint->name().c_str());
     goto done;
   }
 
@@ -265,23 +263,29 @@ void BodyRosTorqueControllerItem::pd_control(Link* joint, double q_ref)
 
   if (! isnan(u)) {
     if (u < u_lower[i]) {
-      ROS_DEBUG("Calculate u, result is over lower limt. (adjust %f -> %f)", u, u_lower[i]);
+      ROS_DEBUG("joint id %03d (%s): calculate u, result is over lower limt. (adjust %f -> %f)",
+                joint->jointId(), joint->name().c_str(), u, u_lower[i]);
       u = u_lower[i];
     } else if (u > u_upper[i]) {
-      ROS_DEBUG("Calculate u, result is over upper limt. (adjust %f -> %f)", u, u_upper[i]);
+      ROS_DEBUG("joint id %03d (%s): calculate u, result is over upper limt. (adjust %f -> %f)", 
+                joint->jointId(), joint->name().c_str(), u, u_upper[i]);
       u = u_upper[i];
     }
 
+#if (DEBUG_ROS_JOINT_CONTROLLER > 0)
+    ROS_DEBUG("-- joint id %03d (%s) --", joint->jointId(), joint->name().c_str());
     ROS_DEBUG("time step %f", timeStep_);
     ROS_DEBUG("dq_lower %f dq_upper %f", joint->dq_lower(), joint->dq_upper());
     ROS_DEBUG("pgain %f dgain %f", pgain[i], dgain[i]);
     ROS_DEBUG("qref_old_ %f q_old_ %f", qref_old_[i], q_old_[i]);
     ROS_DEBUG("q_ref %f q %f dq_ref %f dq %f u %f", q_ref, q, dq_ref, dq, u);
+    ROS_DEBUG("--");
+#endif  /* DEBUG_ROS_JOINT_CONTROLLER */
 
     joint->u() = u;
     qref_old_[i] = q_ref;
   } else {
-    ROS_ERROR("Calculate u, result is NaN (%s)", joint->name().c_str());
+    ROS_ERROR("joint id %03d (%s): calculate u, result is NaN", joint->jointId(), joint->name().c_str());
   }
 
  done:

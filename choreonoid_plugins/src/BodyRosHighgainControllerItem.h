@@ -23,6 +23,7 @@ protected:
     virtual Item* doDuplicate() const;
     virtual bool hook_of_start();
     virtual void apply_message(Link* joint, size_t idx, trajectory_msgs::JointTrajectoryPoint* point);
+    virtual void keep_attitude();
     virtual bool copy_message(
                   const trajectory_msgs::JointTrajectoryPoint* msg,
                   trajectory_msgs::JointTrajectoryPoint* dst,
@@ -31,7 +32,10 @@ protected:
                   );
 
 private:
-    double timeStep2_;
+    std::vector<bool> hg_calculated_;
+    std::vector<double> qref_;
+
+    void calculate_hg_parameter(Link* joint, double qref, double* velocity, double* acceleration);
 };
 
 typedef ref_ptr<BodyRosHighgainControllerItem> BodyRosHighgainControllerItemPtr;
