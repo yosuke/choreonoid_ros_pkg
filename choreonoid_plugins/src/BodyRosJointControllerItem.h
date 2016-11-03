@@ -109,11 +109,20 @@ protected:
 
     /*
       @brief Hook of simulation start.
-      this method calling in BodyRosJointControllerItem::start.
+      This method calling in BodyRosJointControllerItem::start.
       @retval true Start controller.
       @retval false Stop controller.
      */
     virtual bool hook_of_start();
+
+    /*
+      @brief Hook of simulation start at after creation of the ROS node handle.
+      This method calling in BodyRosJointControllerItem::start.
+      This method can make use of the ROS node handler of 'rosnode_'.
+      @retval true Start controller.
+      @retval false Stop controller.
+     */
+    virtual bool hook_of_start_at_after_creation_rosnode();
 
     /**
       @brief Apply joint trajectory of inner buffer.
