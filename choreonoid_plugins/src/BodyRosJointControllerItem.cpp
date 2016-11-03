@@ -58,6 +58,15 @@ bool BodyRosJointControllerItem::hook_of_start()
   return true;
 }
 
+bool BodyRosJointControllerItem::hook_of_start_at_after_creation_rosnode()
+{
+#if (DEBUG_ROS_JOINT_CONTROLLER > 0)
+  ROS_DEBUG("%s: Called", __PRETTY_FUNCTION__);
+#endif  /* DEBUG_ROS_JOINT_CONTROLLER */
+
+  return true;
+}
+
 bool BodyRosJointControllerItem::start(Target* target)
 {
   std::string topic_name;
@@ -98,6 +107,10 @@ bool BodyRosJointControllerItem::start(Target* target)
   topic_name                 = control_mode_name_ + "/set_joint_trajectory";
   joint_state_subscriber_    = rosnode_->subscribe(
                                           topic_name, 1000, &BodyRosJointControllerItem::receive_message, this);
+
+  if (hook_of_start_at_after_creation_rosnode() == false) {
+    return false;
+  }
 
   async_ros_spin_.reset(new ros::AsyncSpinner(0));
   async_ros_spin_->start();
