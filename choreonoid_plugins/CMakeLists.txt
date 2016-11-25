@@ -1,3 +1,7 @@
+#
+#
+#
+
 cmake_minimum_required(VERSION 2.8.3)
 cmake_policy(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION})
 
@@ -63,8 +67,10 @@ link_directories(
 )
 
 catkin_package(
-  LIBRARIES 
+  LIBRARIES
   CnoidRosBodyPlugin
+  INCLUDE_DIRS
+  src
   CATKIN_DEPENDS
   message_generation 
   roscpp 
@@ -198,6 +204,15 @@ install(TARGETS
   RUNTIME DESTINATION ${CNOID_PLUGIN_SUBDIR}
   LIBRARY DESTINATION ${CNOID_PLUGIN_SUBDIR}
   ARCHIVE DESTINATION ${CNOID_PLUGIN_SUBDIR}
+)
+
+install(
+  DIRECTORY src/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  USE_SOURCE_PERMISSIONS
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN "choreonoid_plugins" EXCLUDE
+  PATTERN "python" EXCLUDE
 )
 
 install(
