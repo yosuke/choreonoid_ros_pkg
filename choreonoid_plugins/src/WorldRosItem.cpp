@@ -1,3 +1,8 @@
+/**
+   @file WorldRosItem.cpp
+   @author
+ */
+
 #include "WorldRosItem.h"
 #include "BodyRosItem.h"
 #include <cnoid/BodyItem>
@@ -10,7 +15,8 @@
 
 using namespace cnoid;
 
-void WorldRosItem::initialize(ExtensionManager* ext) { 
+void WorldRosItem::initialize(ExtensionManager* ext)
+{
   static bool initialized = false;
   int argc = 0;
   char** argv;
@@ -25,16 +31,14 @@ void WorldRosItem::initialize(ExtensionManager* ext) {
 
 WorldRosItem::WorldRosItem()
 {
-  RootItem::instance()->sigTreeChanged().connect(
-                                                 boost::bind(&WorldRosItem::start, this));
+  RootItem::instance()->sigTreeChanged().connect(boost::bind(&WorldRosItem::start, this));
   start();
 }
 
 WorldRosItem::WorldRosItem(const WorldRosItem& org)
   : Item(org)
 {
-  RootItem::instance()->sigTreeChanged().connect(
-                                                 boost::bind(&WorldRosItem::start, this));
+  RootItem::instance()->sigTreeChanged().connect(boost::bind(&WorldRosItem::start, this));
   start();
 }
 
@@ -48,14 +52,135 @@ Item* WorldRosItem::doDuplicate() const
   return new WorldRosItem(*this);
 }
 
+#define copy_wrenches_data(dylink, dst, wrench_index, total_force, total_torque) \
+  do {                                                                           \
+    DyLink::ConstraintForceArray& cfa = dylink->constraintForces();              \
+                                                                                 \
+    for (size_t cfa_idx = 0; cfa_idx < cfa.size(); cfa_idx++) {                  \
+      dst->wrenches[wrench_index].force.x  = cfa[cfa_idx].force[0];              \
+      dst->wrenches[wrench_index].force.y  = cfa[cfa_idx].force[1];              \
+      dst->wrenches[wrench_index].force.z  = cfa[cfa_idx].force[2];              \
+      dst->wrenches[wrench_index].torque.x = cfa[cfa_idx].point[0];              \
+      dst->wrenches[wrench_index].torque.y = cfa[cfa_idx].point[1];              \
+      dst->wrenches[wrench_index].torque.z = cfa[cfa_idx].point[2];              \
+      wrench_index++;                                                            \
+    }                                                                            \
+                                                                                 \
+    total_force  += dylink->f_ext();                                             \
+    total_torque += dylink->tau_ext();                                           \
+  } while(0)
+
+void WorldRosItem::publishContactsState()
+{
+  if (! sim_access_ || ! sim_access_->get_collisions()) {
+    return;
+  }
+
+  gazebo_msgs::ContactsState cs;
+  rosgraph_msgs::Clock       tm;
+  std::string                info;
+  CollisionLinkPairListPtr   collision_pairs;
+  size_t                     i;
+
+  tm.clock.fromSec(sim->currentTime());
+
+  info                 = "world: \"" + world->name() + "\"";
+  cs.header.stamp.sec  = tm.clock.sec;
+  cs.header.stamp.nsec = tm.clock.nsec;
+  collision_pairs      = sim_access_->get_collisions();
+  i                    = 0;
+
+  cs.states.resize(collision_pairs->size());
+
+  for (CollisionLinkPairList::iterator it = collision_pairs->begin(); it != collision_pairs->end(); it++) {
+    gazebo_msgs::ContactState* dst     = &(cs.states[i++]);
+    CollisionLinkPairPtr       p       = *it;
+    size_t                     cols_sz = p->collisions.size();
+
+    /*
+      Copy results of link pairs name.
+     */
+    dst->info            = info;
+    dst->collision1_name = p->body[0]->name() + "::" + p->link[0]->name();
+    dst->collision2_name = p->body[1]->name() + "::" + p->link[1]->name();
+
+    /*
+      Copy results of force and torque.
+     */
+    DyLink* dylink0;
+    DyLink* dylink1;
+    size_t  wrch_sz;
+
+    dylink0 = dynamic_cast<DyLink*>(p->link[0]);
+    dylink1 = dynamic_cast<DyLink*>(p->link[1]);
+    wrch_sz = 0;
+
+    if (dylink0) {
+      wrch_sz += dylink0->constraintForces().size();
+    }
+
+    if (dylink1) {
+      wrch_sz += dylink1->constraintForces().size();
+    }
+
+    dst->wrenches.resize(wrch_sz);
+
+    if (wrch_sz > 0) {
+      Vector3 total_force(Vector3::Zero());
+      Vector3 total_torque(Vector3::Zero());
+      size_t  wrch_idx = 0;
+
+      if (dylink0) {
+        copy_wrenches_data(dylink0, dst, wrch_idx, total_force, total_torque);
+      }
+
+      if (dylink1) {
+        copy_wrenches_data(dylink1, dst, wrch_idx, total_force, total_torque);
+      }
+
+      dst->total_wrench.force.x  = total_force[0];
+      dst->total_wrench.force.y  = total_force[1];
+      dst->total_wrench.force.z  = total_force[2];
+      dst->total_wrench.torque.x = total_torque[0];
+      dst->total_wrench.torque.y = total_torque[1];
+      dst->total_wrench.torque.z = total_torque[2];
+    }
+
+    /*
+      Copy results of position and normal and depth.
+     */
+    dst->contact_positions.resize(cols_sz);
+    dst->contact_normals.resize(cols_sz);
+    dst->depths.resize(cols_sz);
+
+    for (size_t j = 0; j < cols_sz; j++) {
+      Collision* src = &(p->collisions[j]);
+
+      dst->contact_positions[j].x = src->point[0];
+      dst->contact_positions[j].y = src->point[1];
+      dst->contact_positions[j].z = src->point[2];
+      dst->contact_normals[j].x   = src->normal[0];
+      dst->contact_normals[j].y   = src->normal[1];
+      dst->contact_normals[j].z   = src->normal[2];
+      dst->depths[j]              = src->depth;
+    }
+  }
+
+  pub_world_contacts_state_.publish(cs);
+
+  return;
+}
+
+#undef copy_wrenches_data
+
 void WorldRosItem::start()
 {
   static bool initialized = false;
   if (initialized) return;
-  
-  world = this->findOwnerItem<WorldItem>();
 
-  if (! world) {
+  sim_func_regid = -1;
+
+  if (! (world = this->findOwnerItem<WorldItem>())) {
     return;
   }
 
@@ -73,7 +198,20 @@ void WorldRosItem::start()
   pub_model_states_ = rosnode_->advertise<gazebo_msgs::ModelStates>("model_states", 10);
   TimeBar* timeBar = TimeBar::instance();
   timeBar->sigTimeChanged().connect(boost::bind(&WorldRosItem::timeTick, this, _1));
-  
+
+  std::string topic_name;
+
+  topic_name                = "/choreonoid/" + world->name() + "/physics/contacts";
+  pub_world_contacts_state_ = rosnode_->advertise<gazebo_msgs::ContactsState>(topic_name, 10);
+  sim_access_               = static_cast<WorldRosSimulatorItemAccessor*>(sim.get());
+  sim_func_regid            = sim->addPostDynamicsFunction(std::bind(&WorldRosItem::publishContactsState, this));
+
+  AISTSimulatorItem* aist_sim;
+
+  if ((aist_sim = static_cast<AISTSimulatorItem*>(sim.get()))) {
+    aist_sim->setConstraintForceOutputEnabled(true);
+  }
+
   std::string pause_physics_service_name("pause_physics");
   ros::AdvertiseServiceOptions pause_physics_aso =
     ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
@@ -271,14 +409,38 @@ bool WorldRosItem::spawnModel(gazebo_msgs::SpawnModel::Request &req,
 
   BodyItemPtr body = new BodyItem();
   body->setName(req.model_name);
+
+  /*
+    Load model file.
+   */
+
+  char *tmpfname = 0;
+  bool is_ok     = false;
+
+  if (tmpfname = new char(L_tmpnam)) {
+    strncpy(tmpfname, "cnoid_ros_pkgXXXXXX", L_tmpnam);
+
+    if (mkstemp(tmpfname) != -1) {
+      std::ofstream ofs(tmpfname);
+      ofs << model_xml << std::endl;
+      ofs.flush();
+      ofs.close();
+      body->loadModelFile(tmpfname);
+      remove(tmpfname);
+      is_ok = true;
+    }
+
+    delete(tmpfname);
+  }
+
+  if (! is_ok) {
+    return false;
+  }
   
-  const char *fname = tmpnam(NULL);
-  std::ofstream ofs(fname);
-  ofs << model_xml << std::endl;
-  ofs.close();
-  body->loadModelFile(fname);
-  remove(fname);
-  
+  /*
+    Spawn model to simulation world.
+   */
+
   body->body()->rootLink()->setTranslation(trans);
   body->body()->rootLink()->setRotation(R.matrix());
   world->addChildItem(body);
@@ -310,6 +472,10 @@ bool WorldRosItem::deleteModel(gazebo_msgs::DeleteModel::Request &req,
 
 void WorldRosItem::stop()
 {
+  if (sim_func_regid > -1) {
+    sim->removePostDynamicsFunction(sim_func_regid);
+  }
+
   if (ros::ok()) {
     if (rosqueue_.isEnabled()) {
       rosqueue_.clear();

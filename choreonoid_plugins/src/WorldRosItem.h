@@ -1,10 +1,17 @@
+/**
+   @file WorldRosItem.h
+   @author
+ */
+
 #ifndef CNOID_ROS_PLUGIN_WORLD_ROS_ITEM_H_INCLUDED
 #define CNOID_ROS_PLUGIN_WORLD_ROS_ITEM_H_INCLUDED
 
 #include <cnoid/Item>
 #include <cnoid/Body>
+#include <cnoid/DyBody>
 #include <cnoid/WorldItem>
 #include <cnoid/SimulatorItem>
+#include <cnoid/AISTSimulatorItem>
 #include <cnoid/TimeBar>
 #include "exportdecl.h"
 
@@ -18,12 +25,50 @@
 #include <gazebo_msgs/ModelStates.h>
 #include <gazebo_msgs/SpawnModel.h>
 #include <gazebo_msgs/DeleteModel.h>
+#include <gazebo_msgs/ContactsState.h>
 
 #include <vector>
 #include <boost/thread.hpp>
 
 namespace cnoid {
 
+/**
+   @brief This class is for accessing protected 'getCollisions' method in the SimulatorItem class.
+   The use of this class is limited to this only. How to use, please see following example.
+
+   @code
+   SimulatorItemPtr               p;
+   WorldRosSimulatorItemAccessor* sim_access;
+
+   p          = <set SimulatorItem's instance>;
+   sim_access = static_cast<WorldRosSimulatorItemAccessor*>(p.get());
+
+   CollisionsLinkPairListPtr link_pairs = sim_access->get_collisions();
+
+   if (link_pairs) {
+     // This physics engine are collision output supported.
+   } else {
+     // This physics engine are not collision output supported.
+   }
+   @endcode
+
+   @attention This class does not consider usage other than the contents described in the explanation.
+ */
+class CNOID_EXPORT WorldRosSimulatorItemAccessor : public SimulatorItem
+{
+public:
+  WorldRosSimulatorItemAccessor() { }
+  CollisionLinkPairListPtr get_collisions() { return getCollisions(); }
+  virtual SimulationBody* createSimulationBody(Body* orgBody) { return 0; }
+  virtual bool initializeSimulation(const std::vector<SimulationBody*>& simBodies) { return true; }
+  virtual bool stepSimulation(const std::vector<SimulationBody*>& activeSimBodies) { return true; }
+};
+
+typedef ref_ptr<WorldRosSimulatorItemAccessor> WorldRosSimulatorItemAccessorPtr;
+
+/**
+   @brief
+ */
 class CNOID_EXPORT WorldRosItem : public Item
 {
 public:
@@ -71,9 +116,26 @@ private:
     ros::ServiceServer spawn_urdf_model_service_;
     ros::ServiceServer spawn_sdf_model_service_;
     ros::ServiceServer delete_model_service_;
+
+    /*
+      For Publish collision data. (contacts state)
+     */
+
+    /// Publisher of world contacts state. (link collisions pair)
+    ros::Publisher pub_world_contacts_state_;
+    /// The registration id of calling function from physics engine. (physics engine is SimulatorItem's subclass)
+    int sim_func_regid;
+    /// For getting collision data.
+    WorldRosSimulatorItemAccessor* sim_access_;
+
+    /**
+       @brief Publish link conatcts state.
+       This information is the calculation result in the physics engine. (e.g. AISTSimulatorItem etc)
+     */
+    void publishContactsState();
 };
 
 typedef ref_ptr<WorldRosItem> WorldRosItemPtr;
-}
 
-#endif
+}
+#endif /* #ifndef CNOID_ROS_PLUGIN_WORLD_ROS_ITEM_H_INCLUDED */
