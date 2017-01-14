@@ -5,6 +5,7 @@
 
 #include "WorldRosItem.h"
 #include "BodyRosItem.h"
+
 #include <cnoid/BodyItem>
 #include <cnoid/RootItem>
 #include <cnoid/Link>
@@ -12,6 +13,9 @@
 #include <cnoid/ItemManager>
 #include <cnoid/MessageView>
 #include <cnoid/ItemTreeView>
+#include <cnoid/EigenUtil>
+
+#define DEBUG_CONTACTS_STATE 0
 
 using namespace cnoid;
 
@@ -32,6 +36,10 @@ void WorldRosItem::initialize(ExtensionManager* ext)
 WorldRosItem::WorldRosItem()
 {
   RootItem::instance()->sigTreeChanged().connect(boost::bind(&WorldRosItem::start, this));
+
+  is_publish_cs    = false;
+  is_csmsg_verbose = false;
+
   start();
 }
 
@@ -39,6 +47,10 @@ WorldRosItem::WorldRosItem(const WorldRosItem& org)
   : Item(org)
 {
   RootItem::instance()->sigTreeChanged().connect(boost::bind(&WorldRosItem::start, this));
+
+  is_publish_cs    = org.is_publish_cs;
+  is_csmsg_verbose = org.is_csmsg_verbose;
+
   start();
 }
 
@@ -47,44 +59,79 @@ WorldRosItem::~WorldRosItem()
   stop();
 }
 
+bool WorldRosItem::store(Archive& archive)
+{
+  archive.write("publishContactsState", is_publish_cs);
+  archive.write("contactsStateMessagesVerbose", is_csmsg_verbose);
+
+  return true;
+}
+
+bool WorldRosItem::restore(const Archive& archive)
+{
+  archive.read("publishContactsState", is_publish_cs);
+  archive.read("contactsStateMessagesVerbose", is_csmsg_verbose);
+
+  return true;
+}
+
 Item* WorldRosItem::doDuplicate() const
 {
   return new WorldRosItem(*this);
 }
 
-#define copy_wrenches_data(dylink, dst, wrench_index, total_force, total_torque) \
-  do {                                                                           \
-    DyLink::ConstraintForceArray& cfa = dylink->constraintForces();              \
-                                                                                 \
-    for (size_t cfa_idx = 0; cfa_idx < cfa.size(); cfa_idx++) {                  \
-      dst->wrenches[wrench_index].force.x  = cfa[cfa_idx].force[0];              \
-      dst->wrenches[wrench_index].force.y  = cfa[cfa_idx].force[1];              \
-      dst->wrenches[wrench_index].force.z  = cfa[cfa_idx].force[2];              \
-      dst->wrenches[wrench_index].torque.x = cfa[cfa_idx].point[0];              \
-      dst->wrenches[wrench_index].torque.y = cfa[cfa_idx].point[1];              \
-      dst->wrenches[wrench_index].torque.z = cfa[cfa_idx].point[2];              \
-      wrench_index++;                                                            \
-    }                                                                            \
-                                                                                 \
-    total_force  += dylink->f_ext();                                             \
-    total_torque += dylink->tau_ext();                                           \
-  } while(0)
+void WorldRosItem::doPutProperties(PutPropertyFunction& putProperty)
+{
+  putProperty("Publish constacs state", is_publish_cs, changeProperty(is_publish_cs));
+  putProperty("Make contacts state messages verbose", is_csmsg_verbose, changeProperty(is_csmsg_verbose));
+
+  return;
+}
+
+inline Vector3 rotateVectorReverse(Quaternion q, Vector3 v)
+{
+  Quaternion tmp;
+  Vector3    ret;
+
+  tmp.w() = 0.0;
+  tmp.x() = v[0];
+  tmp.y() = v[1];
+  tmp.z() = v[2];
+
+#if (DEBUG_CONTACTS_STATE > 0)
+  std::cout << "rotateVectorReverse:" << std::endl;
+  std::cout << "\targ1 (quaternion): " << q.w() << " " << q.x() << " " << q.y() << " " << q.z() << std::endl;
+  std::cout << "\targ2 (vector3)   : " << v.transpose() << std::endl;
+  std::cout << "\targ1 inverse     : " << q.inverse().w() << " " << q.inverse().x() << " " << q.inverse().y() << " "
+            << q.inverse().z() << std::endl;
+#endif                          /* (DEBUG_CONTACTS_STATE > 0) */
+
+  tmp = q.inverse() * (tmp * q);
+
+  ret << tmp.x(), tmp.y(), tmp.z();
+
+#if (DEBUG_CONTACTS_STATE > 0)
+  std::cout << "\tresult           : " << ret.transpose() << std::endl;
+#endif                          /* (DEBUG_CONTACTS_STATE > 0) */
+
+  return ret;
+}
 
 void WorldRosItem::publishContactsState()
 {
-  if (! sim_access_ || ! sim_access_->get_collisions()) {
-    return;
-  }
-
   gazebo_msgs::ContactsState cs;
   rosgraph_msgs::Clock       tm;
   std::string                info;
   CollisionLinkPairListPtr   collision_pairs;
   size_t                     i;
 
+  if (! sim_access_ || ! sim_access_->get_collisions()) {
+    return;
+  }
+
   tm.clock.fromSec(sim->currentTime());
 
-  info                 = "world: \"" + world->name() + "\"";
+  info                 = "world:\"" + world->name() + "\"";
   cs.header.stamp.sec  = tm.clock.sec;
   cs.header.stamp.nsec = tm.clock.nsec;
   collision_pairs      = sim_access_->get_collisions();
@@ -100,27 +147,20 @@ void WorldRosItem::publishContactsState()
     /*
       Copy results of link pairs name.
      */
-    dst->info            = info;
     dst->collision1_name = p->body[0]->name() + "::" + p->link[0]->name();
     dst->collision2_name = p->body[1]->name() + "::" + p->link[1]->name();
 
     /*
       Copy results of force and torque.
      */
-    DyLink* dylink0;
-    DyLink* dylink1;
+    DyLink* dylink;
     size_t  wrch_sz;
 
-    dylink0 = dynamic_cast<DyLink*>(p->link[0]);
-    dylink1 = dynamic_cast<DyLink*>(p->link[1]);
+    dylink  = dynamic_cast<DyLink*>(p->link[0]);
     wrch_sz = 0;
 
-    if (dylink0) {
-      wrch_sz += dylink0->constraintForces().size();
-    }
-
-    if (dylink1) {
-      wrch_sz += dylink1->constraintForces().size();
+    if (dylink) {
+      wrch_sz += dylink->constraintForces().size();
     }
 
     dst->wrenches.resize(wrch_sz);
@@ -130,12 +170,26 @@ void WorldRosItem::publishContactsState()
       Vector3 total_torque(Vector3::Zero());
       size_t  wrch_idx = 0;
 
-      if (dylink0) {
-        copy_wrenches_data(dylink0, dst, wrch_idx, total_force, total_torque);
-      }
+      if (dylink) {
+        Quaternion frame_rot(Matrix3(dylink->R()));
+        DyLink::ConstraintForceArray& cfa = dylink->constraintForces();
 
-      if (dylink1) {
-        copy_wrenches_data(dylink1, dst, wrch_idx, total_force, total_torque);
+        for (size_t cfa_idx = 0; cfa_idx < cfa.size(); cfa_idx++) {
+          Vector3 force = rotateVectorReverse(frame_rot, cfa[cfa_idx].force);
+          Vector3 tau   = rotateVectorReverse(frame_rot, cfa[cfa_idx].point.cross(cfa[cfa_idx].force));
+
+          dst->wrenches[wrch_idx].force.x  = force[0];
+          dst->wrenches[wrch_idx].force.y  = force[1];
+          dst->wrenches[wrch_idx].force.z  = force[2];
+          dst->wrenches[wrch_idx].torque.x = tau[0];
+          dst->wrenches[wrch_idx].torque.y = tau[1];
+          dst->wrenches[wrch_idx].torque.z = tau[2];
+
+          wrch_idx++;
+        }
+
+        total_force  = rotateVectorReverse(frame_rot, dylink->f_ext());
+        total_torque = rotateVectorReverse(frame_rot, dylink->tau_ext());
       }
 
       dst->total_wrench.force.x  = total_force[0];
@@ -159,10 +213,19 @@ void WorldRosItem::publishContactsState()
       dst->contact_positions[j].x = src->point[0];
       dst->contact_positions[j].y = src->point[1];
       dst->contact_positions[j].z = src->point[2];
-      dst->contact_normals[j].x   = src->normal[0];
-      dst->contact_normals[j].y   = src->normal[1];
-      dst->contact_normals[j].z   = src->normal[2];
+      dst->contact_normals[j].x   = -src->normal[0];
+      dst->contact_normals[j].y   = -src->normal[1];
+      dst->contact_normals[j].z   = -src->normal[2];
       dst->depths[j]              = src->depth;
+    }
+
+    if (! is_csmsg_verbose) {
+      dst->info = info;
+    } else {
+      dst->info = info + " number of collision pairs:(" + std::to_string(i) + "/" +
+                  std::to_string(collision_pairs->size()) + ") my geom:\"" + dst->collision1_name +
+                  "\" other geom:\"" + dst->collision2_name + "\" wrenches/contacts:(" + std::to_string(wrch_sz) +
+                  "/" + std::to_string(cols_sz) + ") time:" + std::to_string(sim->currentTime());
     }
   }
 
@@ -170,8 +233,6 @@ void WorldRosItem::publishContactsState()
 
   return;
 }
-
-#undef copy_wrenches_data
 
 void WorldRosItem::start()
 {
@@ -199,17 +260,19 @@ void WorldRosItem::start()
   TimeBar* timeBar = TimeBar::instance();
   timeBar->sigTimeChanged().connect(boost::bind(&WorldRosItem::timeTick, this, _1));
 
-  std::string topic_name;
+  if (is_publish_cs) {
+    std::string topic_name;
 
-  topic_name                = "/choreonoid/" + world->name() + "/physics/contacts";
-  pub_world_contacts_state_ = rosnode_->advertise<gazebo_msgs::ContactsState>(topic_name, 10);
-  sim_access_               = static_cast<WorldRosSimulatorItemAccessor*>(sim.get());
-  sim_func_regid            = sim->addPostDynamicsFunction(std::bind(&WorldRosItem::publishContactsState, this));
+    topic_name                = "/choreonoid/" + world->name() + "/physics/contacts";
+    pub_world_contacts_state_ = rosnode_->advertise<gazebo_msgs::ContactsState>(topic_name, 10);
+    sim_access_               = static_cast<WorldRosSimulatorItemAccessor*>(sim.get());
+    sim_func_regid            = sim->addPostDynamicsFunction(std::bind(&WorldRosItem::publishContactsState, this));
 
-  AISTSimulatorItem* aist_sim;
+    AISTSimulatorItem* aist_sim;
 
-  if ((aist_sim = static_cast<AISTSimulatorItem*>(sim.get()))) {
-    aist_sim->setConstraintForceOutputEnabled(true);
+    if ((aist_sim = static_cast<AISTSimulatorItem*>(sim.get()))) {
+      aist_sim->setConstraintForceOutputEnabled(true);
+    }
   }
 
   std::string pause_physics_service_name("pause_physics");
@@ -409,38 +472,14 @@ bool WorldRosItem::spawnModel(gazebo_msgs::SpawnModel::Request &req,
 
   BodyItemPtr body = new BodyItem();
   body->setName(req.model_name);
-
-  /*
-    Load model file.
-   */
-
-  char *tmpfname = 0;
-  bool is_ok     = false;
-
-  if (tmpfname = new char(L_tmpnam)) {
-    strncpy(tmpfname, "cnoid_ros_pkgXXXXXX", L_tmpnam);
-
-    if (mkstemp(tmpfname) != -1) {
-      std::ofstream ofs(tmpfname);
-      ofs << model_xml << std::endl;
-      ofs.flush();
-      ofs.close();
-      body->loadModelFile(tmpfname);
-      remove(tmpfname);
-      is_ok = true;
-    }
-
-    delete(tmpfname);
-  }
-
-  if (! is_ok) {
-    return false;
-  }
   
-  /*
-    Spawn model to simulation world.
-   */
-
+  const char *fname = tmpnam(NULL);
+  std::ofstream ofs(fname);
+  ofs << model_xml << std::endl;
+  ofs.close();
+  body->loadModelFile(fname);
+  remove(fname);
+  
   body->body()->rootLink()->setTranslation(trans);
   body->body()->rootLink()->setRotation(R.matrix());
   world->addChildItem(body);
@@ -474,6 +513,7 @@ void WorldRosItem::stop()
 {
   if (sim_func_regid > -1) {
     sim->removePostDynamicsFunction(sim_func_regid);
+    sim_func_regid = -1;
   }
 
   if (ros::ok()) {

@@ -30,16 +30,10 @@ add_custom_target(clean
 )
 
 install(
-  DIRECTORY launch
+  DIRECTORY launch model
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   USE_SOURCE_PERMISSIONS
 )
-
-#
-# Although it is not installed by the standard installation process of Chorenoid,
-# it is a header file necessary for the build of the Choreonoid ROS plugin,
-# so the following correspondence is made.
-#
 
 execute_process(
   COMMAND find ${CATKIN_DEVEL_PREFIX}/include -name "choreonoid-*"
@@ -47,6 +41,11 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
+#
+# Although it is not installed by the standard installation process of Chorenoid,
+# it is a header file necessary for the build of the Choreonoid ROS plugin,
+# so the following correspondence is made.
+#
 execute_process(
   COMMAND find ${CATKIN_DEVEL_PREFIX}/../build -name "choreonoid-master"
   OUTPUT_VARIABLE _cnoid_build_path

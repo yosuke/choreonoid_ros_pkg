@@ -77,6 +77,9 @@ public:
     WorldRosItem();
     WorldRosItem(const WorldRosItem& org);
     virtual ~WorldRosItem();
+
+    virtual bool store(Archive& archive);
+    virtual bool restore(const Archive& archive);
     
     void start();
     void stop();
@@ -85,6 +88,7 @@ public:
 
 protected:
     virtual Item* doDuplicate() const;
+    virtual void doPutProperties(PutPropertyFunction& putProperty);
     
 private:
     WorldItemPtr world;
@@ -127,6 +131,11 @@ private:
     int sim_func_regid;
     /// For getting collision data.
     WorldRosSimulatorItemAccessor* sim_access_;
+
+    // Choose enable or disable on publish contacts state.
+    bool is_publish_cs;
+    // Choose contacts state messages quiet or verbose.
+    bool is_csmsg_verbose;
 
     /**
        @brief Publish link conatcts state.

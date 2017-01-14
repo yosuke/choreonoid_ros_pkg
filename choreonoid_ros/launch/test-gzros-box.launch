@@ -1,0 +1,6 @@
+<launch>
+  <param name="model_description" textfile="$(find choreonoid_ros)/model/box100x100x100_1Kg.urdf" />
+  <node name="box01kg" pkg="gazebo_ros" type="spawn_model"
+    args="-unpause -urdf -param model_description -model box -ros_namespace /gazebo -x 0.0 -y 0.0 -z 20.0" respawn="false" output="screen">
+  </node> 
+</launch>
