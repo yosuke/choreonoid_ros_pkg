@@ -1,0 +1,122 @@
+
+Examination of contacts state
+=============================
+
+This examination is confirmation of the collisions information.
+Is fall simulation of a box with different center of mass that confirm.
+When after box falling down to floor, run the confirmation command.
+
+list of center of mass of box:
+
+- box00: x=0.0   y=0.0   z=0.0
+- box01: x=-0.25 y=0.0   z=0.0
+- box02: x=0.25  y=0.0   z=0.0
+- box03: x=0.0   y=-0.25 z=0.0
+- box04: x=0.0   y=-0.25 z=0.0
+- box05: x=0.25  y=0.25  z=0.0
+- box06: x=0.25  y=-0.25 z=0.0
+- box07: x=-0.25 y=-0.25 z=0.0
+- box08: x=-0.25 y=0.25  z=0.0
+- box09: x=0.0   y=0.0   z=0.25
+- box10: x=0.0   y=0.0   z=-0.25
+- box21: x=0.0   y=0.0   z=0.0
+- box22: x=0.0   y=0.0   z=0.0
+
+list of position of box:
+
+- box00: x=0.0  y=0.0  z=20.0
+- box01: x=0.0  y=0.0  z=20.0
+- box02: x=0.0  y=0.0  z=20.0
+- box03: x=0.0  y=0.0  z=20.0
+- box04: x=0.0  y=0.0  z=20.0
+- box05: x=0.0  y=0.0  z=20.0
+- box06: x=0.0  y=0.0  z=20.0
+- box07: x=0.0  y=0.0  z=20.0
+- box08: x=0.0  y=0.0  z=20.0
+- box09: x=0.0  y=0.0  z=20.0
+- box10: x=0.0  y=0.0  z=20.0
+- box21: x=1.0  y=1.0  z=20.0
+- box22: x=-1.0 y=-1.0 z=20.0
+
+The mass of the box is 1.0 kg each.
+
+
+Choreonoid ROS package
+----------------------
+
+The simulation and confirmation command.
+
+- box00: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 0
+- box01: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 1
+- box02: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 2
+- box03: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 3
+- box04: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 4
+- box05: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 5
+- box06: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 6
+- box07: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 7
+- box08: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 8
+- box09: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 9
+- box10: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 10
+- box21: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 21
+- box22: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 22
+
+  rostopic echo /choreonoid/default/physics/contacts_state
+
+
+Gazebo ROS packages
+-------------------
+
+The simulation and confirmation command.
+
+- box00: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 0
+
+  rostopic echo /BOX00_contact_sensor_state
+
+- box01: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 1
+
+  rostopic echo /BOX01_contact_sensor_state
+
+- box02: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 2
+
+  rostopic echo /BOX02_contact_sensor_state
+
+- box03: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 3
+
+  rostopic echo /BOX03_contact_sensor_state
+
+- box04: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 4
+
+  rostopic echo /BOX04_contact_sensor_state
+
+- box05: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 5
+
+  rostopic echo /BOX05_contact_sensor_state
+
+- box06: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 6
+
+  rostopic echo /BOX06_contact_sensor_state
+
+- box07: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 7
+
+  rostopic echo /BOX07_contact_sensor_state
+
+- box08: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 8
+
+  rostopic echo /BOX08_contact_sensor_state
+
+- box09: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 9
+
+  rostopic echo /BOX09_contact_sensor_state
+
+- box10: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 10
+
+  rostopic echo /BOX10_contact_sensor_state
+
+- box21: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 21
+
+  rostopic echo /BOX00_contact_sensor_state
+
+- box22: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 22
+
+  rostopic echo /BOX00_contact_sensor_state
+

@@ -132,10 +132,17 @@ private:
     /// For getting collision data.
     WorldRosSimulatorItemAccessor* sim_access_;
 
-    // Choose enable or disable on publish contacts state.
-    bool is_publish_cs;
-    // Choose contacts state messages quiet or verbose.
+    /// Update rate for publish contacts state.
+    double publish_cs_update_rate;
+    /// Update interval for publish contacts state.
+    double publish_cs_update_interval;
+    /// Publish next time for contacts state.
+    double publish_cs_next_time;
+    /// Choose contacts state messages quiet or verbose.
     bool is_csmsg_verbose;
+
+    /// Publish this message.
+    gazebo_msgs::ContactsState contacts_state;
 
     /**
        @brief Publish link conatcts state.

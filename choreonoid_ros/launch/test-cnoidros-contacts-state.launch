@@ -1,6 +1,8 @@
 <launch>
+  <arg name="cnoid_file" />
+
   <param name="use_sim_time" value="true" />
   <include file="$(find choreonoid_ros)/launch/choreonoid.launch">
-    <arg name="PROJECT_FILE" default="$(find choreonoid_plugins)/test/contacts-state.cnoid" />
+    <arg name="PROJECT_FILE" value="$(find choreonoid_plugins)/test/$(arg cnoid_file)" />
   </include>
 </launch>

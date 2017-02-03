@@ -37,8 +37,8 @@ WorldRosItem::WorldRosItem()
 {
   RootItem::instance()->sigTreeChanged().connect(boost::bind(&WorldRosItem::start, this));
 
-  is_publish_cs    = false;
-  is_csmsg_verbose = false;
+  is_csmsg_verbose       = false;
+  publish_cs_update_rate = 100.0;
 
   start();
 }
@@ -48,8 +48,8 @@ WorldRosItem::WorldRosItem(const WorldRosItem& org)
 {
   RootItem::instance()->sigTreeChanged().connect(boost::bind(&WorldRosItem::start, this));
 
-  is_publish_cs    = org.is_publish_cs;
-  is_csmsg_verbose = org.is_csmsg_verbose;
+  is_csmsg_verbose       = org.is_csmsg_verbose;
+  publish_cs_update_rate = org.publish_cs_update_rate;
 
   start();
 }
@@ -61,7 +61,7 @@ WorldRosItem::~WorldRosItem()
 
 bool WorldRosItem::store(Archive& archive)
 {
-  archive.write("publishContactsState", is_publish_cs);
+  archive.write("publishContactsStateUpdateRate", publish_cs_update_rate);
   archive.write("contactsStateMessagesVerbose", is_csmsg_verbose);
 
   return true;
@@ -69,7 +69,7 @@ bool WorldRosItem::store(Archive& archive)
 
 bool WorldRosItem::restore(const Archive& archive)
 {
-  archive.read("publishContactsState", is_publish_cs);
+  archive.read("publishContactsStateUpdateRate", publish_cs_update_rate);
   archive.read("contactsStateMessagesVerbose", is_csmsg_verbose);
 
   return true;
@@ -82,13 +82,14 @@ Item* WorldRosItem::doDuplicate() const
 
 void WorldRosItem::doPutProperties(PutPropertyFunction& putProperty)
 {
-  putProperty("Publish constacs state", is_publish_cs, changeProperty(is_publish_cs));
+  putProperty.decimals(2).min(0.0)("Publish contacts state update rate", publish_cs_update_rate,
+                                    changeProperty(publish_cs_update_rate));
   putProperty("Make contacts state messages verbose", is_csmsg_verbose, changeProperty(is_csmsg_verbose));
 
   return;
 }
 
-inline Vector3 rotateVectorReverse(Quaternion q, Vector3 v)
+inline Vector3 rotateVectorReverse(const Quaternion q, const Vector3 v)
 {
   Quaternion tmp;
   Vector3    ret;
@@ -119,36 +120,28 @@ inline Vector3 rotateVectorReverse(Quaternion q, Vector3 v)
 
 void WorldRosItem::publishContactsState()
 {
-  gazebo_msgs::ContactsState cs;
-  rosgraph_msgs::Clock       tm;
-  std::string                info;
-  CollisionLinkPairListPtr   collision_pairs;
-  size_t                     i;
+  CollisionLinkPairListPtr collision_pairs;
+  size_t                   i;
 
   if (! sim_access_ || ! sim_access_->get_collisions()) {
     return;
   }
 
-  tm.clock.fromSec(sim->currentTime());
-
-  info                 = "world:\"" + world->name() + "\"";
-  cs.header.stamp.sec  = tm.clock.sec;
-  cs.header.stamp.nsec = tm.clock.nsec;
-  collision_pairs      = sim_access_->get_collisions();
-  i                    = 0;
-
-  cs.states.resize(collision_pairs->size());
+  collision_pairs = sim_access_->get_collisions();
+  i               = 0;
 
   for (CollisionLinkPairList::iterator it = collision_pairs->begin(); it != collision_pairs->end(); it++) {
-    gazebo_msgs::ContactState* dst     = &(cs.states[i++]);
-    CollisionLinkPairPtr       p       = *it;
-    size_t                     cols_sz = p->collisions.size();
+    gazebo_msgs::ContactState dst;
+    CollisionLinkPairPtr      p       = *it;
+    size_t                    cols_sz = p->collisions.size();
+
+    dst.info = "world:\"" + world->name() + "\"";
 
     /*
       Copy results of link pairs name.
      */
-    dst->collision1_name = p->body[0]->name() + "::" + p->link[0]->name();
-    dst->collision2_name = p->body[1]->name() + "::" + p->link[1]->name();
+    dst.collision1_name = p->body[0]->name() + "::" + p->link[0]->name() + "::collision";
+    dst.collision2_name = p->body[1]->name() + "::" + p->link[1]->name() + "::collision";
 
     /*
       Copy results of force and torque.
@@ -163,7 +156,7 @@ void WorldRosItem::publishContactsState()
       wrch_sz += dylink->constraintForces().size();
     }
 
-    dst->wrenches.resize(wrch_sz);
+    dst.wrenches.resize(wrch_sz);
 
     if (wrch_sz > 0) {
       Vector3 total_force(Vector3::Zero());
@@ -171,65 +164,84 @@ void WorldRosItem::publishContactsState()
       size_t  wrch_idx = 0;
 
       if (dylink) {
-        Quaternion frame_rot(Matrix3(dylink->R()));
+        Quaternion                    frame_rot(Matrix3(dylink->R()));
+        Matrix3                       frame_rrot(Matrix3(dylink->R().inverse()));
         DyLink::ConstraintForceArray& cfa = dylink->constraintForces();
 
         for (size_t cfa_idx = 0; cfa_idx < cfa.size(); cfa_idx++) {
-          Vector3 force = rotateVectorReverse(frame_rot, cfa[cfa_idx].force);
-          Vector3 tau   = rotateVectorReverse(frame_rot, cfa[cfa_idx].point.cross(cfa[cfa_idx].force));
+          Vector3 fg    = frame_rrot * cfa[cfa_idx].force;
+          Vector3 force = rotateVectorReverse(frame_rot, fg);
+          Vector3 tau   = rotateVectorReverse(
+                            frame_rot,
+                            frame_rrot * (cfa[cfa_idx].point.cross(cfa[cfa_idx].force) - dylink->wc().cross(fg))
+                            );
 
-          dst->wrenches[wrch_idx].force.x  = force[0];
-          dst->wrenches[wrch_idx].force.y  = force[1];
-          dst->wrenches[wrch_idx].force.z  = force[2];
-          dst->wrenches[wrch_idx].torque.x = tau[0];
-          dst->wrenches[wrch_idx].torque.y = tau[1];
-          dst->wrenches[wrch_idx].torque.z = tau[2];
+          dst.wrenches[wrch_idx].force.x  = force[0];
+          dst.wrenches[wrch_idx].force.y  = force[1];
+          dst.wrenches[wrch_idx].force.z  = force[2];
+          dst.wrenches[wrch_idx].torque.x = tau[0];
+          dst.wrenches[wrch_idx].torque.y = tau[1];
+          dst.wrenches[wrch_idx].torque.z = tau[2];
 
           wrch_idx++;
         }
 
-        total_force  = rotateVectorReverse(frame_rot, dylink->f_ext());
-        total_torque = rotateVectorReverse(frame_rot, dylink->tau_ext());
+        Vector3 fg   = frame_rrot * dylink->f_ext();
+        total_force  = rotateVectorReverse(frame_rot, fg);
+        total_torque = rotateVectorReverse(frame_rot, frame_rrot * (dylink->tau_ext() - dylink->wc().cross(fg)));
       }
 
-      dst->total_wrench.force.x  = total_force[0];
-      dst->total_wrench.force.y  = total_force[1];
-      dst->total_wrench.force.z  = total_force[2];
-      dst->total_wrench.torque.x = total_torque[0];
-      dst->total_wrench.torque.y = total_torque[1];
-      dst->total_wrench.torque.z = total_torque[2];
+      dst.total_wrench.force.x  = total_force[0];
+      dst.total_wrench.force.y  = total_force[1];
+      dst.total_wrench.force.z  = total_force[2];
+      dst.total_wrench.torque.x = total_torque[0];
+      dst.total_wrench.torque.y = total_torque[1];
+      dst.total_wrench.torque.z = total_torque[2];
     }
 
     /*
       Copy results of position and normal and depth.
      */
-    dst->contact_positions.resize(cols_sz);
-    dst->contact_normals.resize(cols_sz);
-    dst->depths.resize(cols_sz);
+    dst.contact_positions.resize(cols_sz);
+    dst.contact_normals.resize(cols_sz);
+    dst.depths.resize(cols_sz);
 
     for (size_t j = 0; j < cols_sz; j++) {
       Collision* src = &(p->collisions[j]);
 
-      dst->contact_positions[j].x = src->point[0];
-      dst->contact_positions[j].y = src->point[1];
-      dst->contact_positions[j].z = src->point[2];
-      dst->contact_normals[j].x   = -src->normal[0];
-      dst->contact_normals[j].y   = -src->normal[1];
-      dst->contact_normals[j].z   = -src->normal[2];
-      dst->depths[j]              = src->depth;
+      dst.contact_positions[j].x = src->point[0];
+      dst.contact_positions[j].y = src->point[1];
+      dst.contact_positions[j].z = src->point[2];
+      dst.contact_normals[j].x   = -src->normal[0];
+      dst.contact_normals[j].y   = -src->normal[1];
+      dst.contact_normals[j].z   = -src->normal[2];
+      dst.depths[j]              = src->depth;
     }
 
-    if (! is_csmsg_verbose) {
-      dst->info = info;
-    } else {
-      dst->info = info + " number of collision pairs:(" + std::to_string(i) + "/" +
-                  std::to_string(collision_pairs->size()) + ") my geom:\"" + dst->collision1_name +
-                  "\" other geom:\"" + dst->collision2_name + "\" wrenches/contacts:(" + std::to_string(wrch_sz) +
-                  "/" + std::to_string(cols_sz) + ") time:" + std::to_string(sim->currentTime());
+    if (is_csmsg_verbose) {
+      dst.info += (" number of collision pairs:(" + std::to_string(++i) + "/" +
+                   std::to_string(collision_pairs->size()) + ") my geom:\"" + dst.collision1_name +
+                   "\" other geom:\"" + dst.collision2_name + "\" wrenches/contacts:(" + std::to_string(wrch_sz) +
+                   "/" + std::to_string(cols_sz) + ")");
     }
+
+    dst.info += (" time:" + std::to_string(sim->currentTime()));
+
+    contacts_state.states.push_back(dst);
   }
 
-  pub_world_contacts_state_.publish(cs);
+  if (publish_cs_next_time <= sim->currentTime()) {
+    rosgraph_msgs::Clock tm;
+
+    tm.clock.fromSec(sim->currentTime());
+
+    contacts_state.header.stamp.sec  = tm.clock.sec;
+    contacts_state.header.stamp.nsec = tm.clock.nsec;
+
+    pub_world_contacts_state_.publish(contacts_state);
+    contacts_state.states.clear();
+    publish_cs_next_time += publish_cs_update_interval;
+  }
 
   return;
 }
@@ -260,19 +272,23 @@ void WorldRosItem::start()
   TimeBar* timeBar = TimeBar::instance();
   timeBar->sigTimeChanged().connect(boost::bind(&WorldRosItem::timeTick, this, _1));
 
-  if (is_publish_cs) {
+  if (publish_cs_update_rate > 0.0 && publish_cs_update_rate <= 1000.0) {
     std::string topic_name;
 
-    topic_name                = "/choreonoid/" + world->name() + "/physics/contacts";
-    pub_world_contacts_state_ = rosnode_->advertise<gazebo_msgs::ContactsState>(topic_name, 10);
-    sim_access_               = static_cast<WorldRosSimulatorItemAccessor*>(sim.get());
-    sim_func_regid            = sim->addPostDynamicsFunction(std::bind(&WorldRosItem::publishContactsState, this));
+    topic_name                 = "/choreonoid/" + world->name() + "/physics/contacts";
+    pub_world_contacts_state_  = rosnode_->advertise<gazebo_msgs::ContactsState>(topic_name, 10);
+    sim_access_                = static_cast<WorldRosSimulatorItemAccessor*>(sim.get());
+    sim_func_regid             = sim->addPostDynamicsFunction(std::bind(&WorldRosItem::publishContactsState, this));
+    publish_cs_update_interval = 1.0 / publish_cs_update_rate;
+    publish_cs_next_time       = 0.0;
 
     AISTSimulatorItem* aist_sim;
 
     if ((aist_sim = static_cast<AISTSimulatorItem*>(sim.get()))) {
       aist_sim->setConstraintForceOutputEnabled(true);
     }
+
+    contacts_state.states.clear();
   }
 
   std::string pause_physics_service_name("pause_physics");

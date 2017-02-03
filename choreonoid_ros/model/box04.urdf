@@ -1,7 +1,7 @@
-<robot name="box100x100x100_1Kg">
-  <link name="BOX01KG">
+<robot name="box04">
+  <link name="BOX04">
     <inertial>
-      <origin xyz="0.0 0.0 0.0" />
+      <origin xyz="0.0 -0.25 0.0" />
       <mass value="1.0" />
       <inertia ixx="0.1667" ixy="0.0" ixz="0.0" iyy="0.1667" iyz="0.0" izz="0.1667" />
     </inertial>
@@ -19,17 +19,17 @@
     </collision>
   </link>
 
-  <gazebo reference="BOX01KG">
+  <gazebo reference="BOX04">
     <selfCollide>false</selfCollide>
-    <sensor type="contact" name="BOX01KG_contact_sensor">
+    <sensor type="contact" name="BOX04_contact_sensor">
       <always_on>true</always_on>
       <update_rate>100.0</update_rate>
       <contact>
-        <collision>BOX01KG_collision</collision>
+        <collision>BOX04_collision</collision>
       </contact>
-      <plugin name="BOX01KG_bumper" filename="libgazebo_ros_bumper.so">
-        <bumperTopicName>BOX01KG_contact_sensor_state</bumperTopicName>
-        <frameName>BOX01KG</frameName>
+      <plugin name="BOX04_bumper" filename="libgazebo_ros_bumper.so">
+        <bumperTopicName>BOX04_contact_sensor_state</bumperTopicName>
+        <frameName>BO04</frameName>
       </plugin>
     </sensor>
     <material>Gazebo/Blue</material>

@@ -15,19 +15,19 @@ items:
       children: 
         - 
           id: 2
-          name: "box100x100x100_1Kg"
+          name: "box01"
           plugin: Body
           class: BodyItem
           data: 
-            modelFile: "../../choreonoid_ros/model/box100x100x100_1Kg.wrl"
-            currentBaseLink: "BOX01KG"
-            rootPosition: [ 0, 0, 20 ]
+            modelFile: "../../choreonoid_ros/model/box01.wrl"
+            currentBaseLink: "BOX01"
+            rootPosition: [ 0.0, 0.0, 20.0 ]
             rootAttitude: [ 
               1, 0, 0, 
               0, 1, 0, 
               0, 0, 1 ]
             jointPositions: [  ]
-            initialRootPosition: [ 0, 0, 20 ]
+            initialRootPosition: [ 0.0, 0.0, 20.0 ]
             initialRootAttitude: [ 
               1, 0, 0, 
               0, 1, 0, 
@@ -94,7 +94,7 @@ items:
           plugin: RosBody
           class: WorldRosItem
           data: 
-            publishContactsState: true
+            publishContactsStateUpdateRate: 100
             contactsStateMessagesVerbose: true
 views: 
   - 
@@ -108,9 +108,9 @@ views:
     class: ItemTreeView
     mounted: true
     state: 
-      selected: [ 1 ]
+      selected: [ 5 ]
       checked: [ 1, 2, 3, 4, 5 ]
-      expanded: [ 1, 2, 3 ]
+      expanded: [ 1, 3 ]
   - 
     id: 2
     plugin: Base
@@ -192,7 +192,7 @@ views:
       spinBox: true
       slider: true
       labelOnLeft: true
-      currentBodyItem: 3
+      currentBodyItem: 2
   - 
     id: 6
     plugin: Body
@@ -200,7 +200,7 @@ views:
     mounted: true
     state: 
       listingMode: "Link List"
-      currentBodyItem: 3
+      currentBodyItem: 2
   - 
     id: 7
     plugin: Python
@@ -226,7 +226,7 @@ toolbars:
     penetrationBlockDepth: 0.0005
     lazyCollisionDetectionMode: true
   "BodyBar": 
-    current: 3
+    current: 2
   "LeggedBodyBar": 
     stanceWidth: 0.15
   "BodyMotionGenerationBar": 
@@ -294,7 +294,7 @@ viewAreas:
     contents: 
       type: splitter
       orientation: horizontal
-      sizes: [ 322, 1570 ]
+      sizes: [ 322, 1572 ]
       children: 
         - 
           type: splitter
@@ -317,7 +317,7 @@ viewAreas:
             - 
               type: splitter
               orientation: horizontal
-              sizes: [ 680, 884 ]
+              sizes: [ 681, 885 ]
               children: 
                 - 
                   type: pane
