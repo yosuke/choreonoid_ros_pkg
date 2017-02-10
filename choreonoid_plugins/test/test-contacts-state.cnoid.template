@@ -22,16 +22,10 @@ items:
             modelFile: "%%%MODEL_FILE%%%"
             currentBaseLink: "%%%MODEL_BASE_LINK%%%"
             rootPosition: [ %%%MODEL_ROOT_POSITION%%% ]
-            rootAttitude: [ 
-              1, 0, 0, 
-              0, 1, 0, 
-              0, 0, 1 ]
+            rootAttitude: [ %%%MODEL_ROOT_ATTITUDE%%% ]
             jointPositions: [  ]
             initialRootPosition: [ %%%MODEL_INITIAL_POSITION%%% ]
-            initialRootAttitude: [ 
-              1, 0, 0, 
-              0, 1, 0, 
-              0, 0, 1 ]
+            initialRootAttitude: [ %%%MODEL_INITIAL_ATTITUDE%%% ]
             zmp: [ 0, 0, 0 ]
             collisionDetection: true
             selfCollisionDetection: false

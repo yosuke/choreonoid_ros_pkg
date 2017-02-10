@@ -22,16 +22,10 @@ items:
             modelFile: "../../choreonoid_ros/model/box00.wrl"
             currentBaseLink: "BOX00"
             rootPosition: [ 1.0, 1.0, 20.0 ]
-            rootAttitude: [ 
-              1, 0, 0, 
-              0, 1, 0, 
-              0, 0, 1 ]
+            rootAttitude: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ]
             jointPositions: [  ]
             initialRootPosition: [ 1.0, 1.0, 20.0 ]
-            initialRootAttitude: [ 
-              1, 0, 0, 
-              0, 1, 0, 
-              0, 0, 1 ]
+            initialRootAttitude: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ]
             zmp: [ 0, 0, 0 ]
             collisionDetection: true
             selfCollisionDetection: false

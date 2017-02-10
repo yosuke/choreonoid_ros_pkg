@@ -89,35 +89,6 @@ void WorldRosItem::doPutProperties(PutPropertyFunction& putProperty)
   return;
 }
 
-inline Vector3 rotateVectorReverse(const Quaternion q, const Vector3 v)
-{
-  Quaternion tmp;
-  Vector3    ret;
-
-  tmp.w() = 0.0;
-  tmp.x() = v[0];
-  tmp.y() = v[1];
-  tmp.z() = v[2];
-
-#if (DEBUG_CONTACTS_STATE > 0)
-  std::cout << "rotateVectorReverse:" << std::endl;
-  std::cout << "\targ1 (quaternion): " << q.w() << " " << q.x() << " " << q.y() << " " << q.z() << std::endl;
-  std::cout << "\targ2 (vector3)   : " << v.transpose() << std::endl;
-  std::cout << "\targ1 inverse     : " << q.inverse().w() << " " << q.inverse().x() << " " << q.inverse().y() << " "
-            << q.inverse().z() << std::endl;
-#endif                          /* (DEBUG_CONTACTS_STATE > 0) */
-
-  tmp = q.inverse() * (tmp * q);
-
-  ret << tmp.x(), tmp.y(), tmp.z();
-
-#if (DEBUG_CONTACTS_STATE > 0)
-  std::cout << "\tresult           : " << ret.transpose() << std::endl;
-#endif                          /* (DEBUG_CONTACTS_STATE > 0) */
-
-  return ret;
-}
-
 void WorldRosItem::publishContactsState()
 {
   CollisionLinkPairListPtr collision_pairs;
@@ -164,17 +135,13 @@ void WorldRosItem::publishContactsState()
       size_t  wrch_idx = 0;
 
       if (dylink) {
-        Quaternion                    frame_rot(Matrix3(dylink->R()));
         Matrix3                       frame_rrot(Matrix3(dylink->R().inverse()));
         DyLink::ConstraintForceArray& cfa = dylink->constraintForces();
 
         for (size_t cfa_idx = 0; cfa_idx < cfa.size(); cfa_idx++) {
-          Vector3 fg    = frame_rrot * cfa[cfa_idx].force;
-          Vector3 force = rotateVectorReverse(frame_rot, fg);
-          Vector3 tau   = rotateVectorReverse(
-                            frame_rot,
-                            frame_rrot * (cfa[cfa_idx].point.cross(cfa[cfa_idx].force) - dylink->wc().cross(fg))
-                            );
+          Vector3 force = frame_rrot * cfa[cfa_idx].force;
+          Vector3 tau   = frame_rrot *
+                            (cfa[cfa_idx].point.cross(cfa[cfa_idx].force) - dylink->wc().cross(cfa[cfa_idx].force));
 
           dst.wrenches[wrch_idx].force.x  = force[0];
           dst.wrenches[wrch_idx].force.y  = force[1];
@@ -186,9 +153,8 @@ void WorldRosItem::publishContactsState()
           wrch_idx++;
         }
 
-        Vector3 fg   = frame_rrot * dylink->f_ext();
-        total_force  = rotateVectorReverse(frame_rot, fg);
-        total_torque = rotateVectorReverse(frame_rot, frame_rrot * (dylink->tau_ext() - dylink->wc().cross(fg)));
+        total_force  = frame_rrot * dylink->f_ext();
+        total_torque = frame_rrot * (dylink->tau_ext() - dylink->wc().cross(dylink->f_ext()));
       }
 
       dst.total_wrench.force.x  = total_force[0];

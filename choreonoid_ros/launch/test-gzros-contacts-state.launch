@@ -4,9 +4,12 @@
 <launch>
   <arg name="identity" />
   <arg name="urdf_file" />
-  <arg name="model_xpos" default="0.0"  />
-  <arg name="model_ypos" default="0.0"  />
-  <arg name="model_zpos" default="20.0" />
+  <arg name="model_xpos"  default="0.0" />
+  <arg name="model_ypos"  default="0.0" />
+  <arg name="model_zpos"  default="20.0" />
+  <arg name="model_roll"  default="0.0" />
+  <arg name="model_pitch" default="0.0" />
+  <arg name="model_yaw"   default="0.0" />
 
   <param name="use_sim_time" value="true" />
 
@@ -16,11 +19,14 @@
   </include>
 
   <include file="$(find choreonoid_ros)/launch/test-gzros-spawn-model.launch">
-    <arg name="node_name"  value="$(arg identity)" />
-    <arg name="model_file" value="$(arg urdf_file)" />
-    <arg name="spawn_xpos" value="$(arg model_xpos)" />
-    <arg name="spawn_ypos" value="$(arg model_ypos)" />
-    <arg name="spawn_zpos" value="$(arg model_zpos)" />
+    <arg name="node_name"   value="$(arg identity)" />
+    <arg name="model_file"  value="$(arg urdf_file)" />
+    <arg name="spawn_xpos"  value="$(arg model_xpos)" />
+    <arg name="spawn_ypos"  value="$(arg model_ypos)" />
+    <arg name="spawn_zpos"  value="$(arg model_zpos)" />
+    <arg name="spawn_roll"  value="$(arg model_roll)" />
+    <arg name="spawn_pitch" value="$(arg model_pitch)" />
+    <arg name="spawn_yaw"   value="$(arg model_yaw)" />
   </include>
 </launch>
 

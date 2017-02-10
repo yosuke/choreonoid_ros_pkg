@@ -11,7 +11,7 @@ list of center of mass of box:
 - box00: x=0.0   y=0.0   z=0.0
 - box01: x=-0.25 y=0.0   z=0.0
 - box02: x=0.25  y=0.0   z=0.0
-- box03: x=0.0   y=-0.25 z=0.0
+- box03: x=0.0   y=0.25  z=0.0
 - box04: x=0.0   y=-0.25 z=0.0
 - box05: x=0.25  y=0.25  z=0.0
 - box06: x=0.25  y=-0.25 z=0.0
@@ -21,22 +21,33 @@ list of center of mass of box:
 - box10: x=0.0   y=0.0   z=-0.25
 - box21: x=0.0   y=0.0   z=0.0
 - box22: x=0.0   y=0.0   z=0.0
+- box31: x=0.0   y=0.0   z=0.0
+- box32: x=0.0   y=0.0   z=0.0
+- box33: x=0.0   y=0.0   z=0.0
+- box34: x=0.0   y=0.0   z=0.0
+- box35: x=0.0   y=0.0   z=0.0
 
-list of position of box:
+list of pose of box:
 
-- box00: x=0.0  y=0.0  z=20.0
-- box01: x=0.0  y=0.0  z=20.0
-- box02: x=0.0  y=0.0  z=20.0
-- box03: x=0.0  y=0.0  z=20.0
-- box04: x=0.0  y=0.0  z=20.0
-- box05: x=0.0  y=0.0  z=20.0
-- box06: x=0.0  y=0.0  z=20.0
-- box07: x=0.0  y=0.0  z=20.0
-- box08: x=0.0  y=0.0  z=20.0
-- box09: x=0.0  y=0.0  z=20.0
-- box10: x=0.0  y=0.0  z=20.0
-- box21: x=1.0  y=1.0  z=20.0
-- box22: x=-1.0 y=-1.0 z=20.0
+- box00: x=0.0  y=0.0  z=20.0  R=0.0         P=0.0        Y=0.0
+- box01: x=0.0  y=0.0  z=20.0  R=0.0         P=0.0        Y=0.0
+- box02: x=0.0  y=0.0  z=20.0  R=0.0         P=0.0        Y=0.0
+- box03: x=0.0  y=0.0  z=20.0  R=0.0         P=0.0        Y=0.0
+- box04: x=0.0  y=0.0  z=20.0  R=0.0         P=0.0        Y=0.0
+- box05: x=0.0  y=0.0  z=20.0  R=0.0         P=0.0        Y=0.0
+- box06: x=0.0  y=0.0  z=20.0  R=0.0         P=0.0        Y=0.0
+- box07: x=0.0  y=0.0  z=20.0  R=0.0         P=0.0        Y=0.0
+- box08: x=0.0  y=0.0  z=20.0  R=0.0         P=0.0        Y=0.0
+- box09: x=0.0  y=0.0  z=20.0  R=0.0         P=0.0        Y=0.0
+- box10: x=0.0  y=0.0  z=20.0  R=0.0         P=0.0        Y=0.0
+- box21: x=1.0  y=1.0  z=20.0  R=0.0         P=0.0        Y=0.0
+- box22: x=-1.0 y=-1.0 z=20.0  R=0.0         P=0.0        Y=0.0
+- box22: x=-1.0 y=-1.0 z=20.0  R=0.0         P=0.0        Y=0.0
+- box31: x=0.5  y=0.5  z=20.0  R=45.0  [deg] P=0.0        Y=0.0
+- box32: x=0.5  y=0.5  z=20.0  R=45.0  [deg] P=45.0 [deg] Y=0.0
+- box33: x=0.5  y=0.5  z=20.0  R=90.0  [deg] P=0.0  [deg] Y=0.0
+- box34: x=0.5  y=0.5  z=20.0  R=180.0 [deg] P=0.0  [deg] Y=0.0
+- box35: x=0.5  y=0.5  z=20.0  R=-90.0 [deg] P=0.0  [deg] Y=0.0
 
 The mass of the box is 1.0 kg each.
 
@@ -59,6 +70,11 @@ The simulation and confirmation command.
 - box10: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 10
 - box21: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 21
 - box22: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 22
+- box31: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 31
+- box32: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 32
+- box33: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 33
+- box34: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 34
+- box35: rosrun choreonoid_ros run_test_contacts_state.sh choreonoid 35
 
   rostopic echo /choreonoid/default/physics/contacts_state
 
@@ -117,6 +133,26 @@ The simulation and confirmation command.
   rostopic echo /BOX00_contact_sensor_state
 
 - box22: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 22
+
+  rostopic echo /BOX00_contact_sensor_state
+
+- box31: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 31
+
+  rostopic echo /BOX00_contact_sensor_state
+
+- box32: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 32
+
+  rostopic echo /BOX00_contact_sensor_state
+
+- box33: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 33
+
+  rostopic echo /BOX00_contact_sensor_state
+
+- box34: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 34
+
+  rostopic echo /BOX00_contact_sensor_state
+
+- box35: rosrun choreonoid_ros run_test_contacts_state.sh gazebo 35
 
   rostopic echo /BOX00_contact_sensor_state
 

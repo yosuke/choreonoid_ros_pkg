@@ -15,17 +15,17 @@ items:
       children: 
         - 
           id: 2
-          name: "box01"
+          name: "box00"
           plugin: Body
           class: BodyItem
           data: 
-            modelFile: "../../choreonoid_ros/model/box01.wrl"
-            currentBaseLink: "BOX01"
-            rootPosition: [ 0.0, 0.0, 20.0 ]
-            rootAttitude: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ]
+            modelFile: "../../choreonoid_ros/model/box00.wrl"
+            currentBaseLink: "BOX00"
+            rootPosition: [ 0.5, 0.5, 20.0 ]
+            rootAttitude: [ 1, 0, 0, 0, -1, -0, 0, 0, -1 ]
             jointPositions: [  ]
-            initialRootPosition: [ 0.0, 0.0, 20.0 ]
-            initialRootAttitude: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ]
+            initialRootPosition: [ 0.5, 0.5, 20.0 ]
+            initialRootAttitude: [ 1, 0, 0, 0, -1, -0, 0, 0, -1 ]
             zmp: [ 0, 0, 0 ]
             collisionDetection: true
             selfCollisionDetection: false
