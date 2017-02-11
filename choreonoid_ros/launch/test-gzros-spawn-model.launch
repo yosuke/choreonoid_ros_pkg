@@ -1,0 +1,21 @@
+<!--
+  usage: roslaunch test-gzros-spawn-model.launch model_file:="<urdf model file>"
+-->
+<launch>
+  <arg name="node_name"   default="test_model" />
+  <arg name="model_file"  default="" />
+  <arg name="spawn_xpos"  default="0.0" />
+  <arg name="spawn_ypos"  default="0.0" />
+  <arg name="spawn_zpos"  default="0.0" />
+  <arg name="spawn_roll"  default="0.0" />
+  <arg name="spawn_pitch" default="0.0" />
+  <arg name="spawn_yaw"   default="0.0" />
+
+  <param name="model_description" textfile="$(find choreonoid_ros)/model/$(arg model_file)" />
+  <node name="$(arg node_name)" pkg="gazebo_ros" type="spawn_model"
+    args="-unpause -urdf -param model_description -model box -ros_namespace /gazebo
+          -x $(arg spawn_xpos) -y $(arg spawn_ypos) -z $(arg spawn_zpos)
+          -R $(arg spawn_roll) -P $(arg spawn_pitch) -Y $(arg spawn_yaw)"
+    respawn="false" output="screen">
+  </node> 
+</launch>
