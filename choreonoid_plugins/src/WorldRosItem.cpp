@@ -454,14 +454,38 @@ bool WorldRosItem::spawnModel(gazebo_msgs::SpawnModel::Request &req,
 
   BodyItemPtr body = new BodyItem();
   body->setName(req.model_name);
-  
-  const char *fname = tmpnam(NULL);
-  std::ofstream ofs(fname);
-  ofs << model_xml << std::endl;
-  ofs.close();
-  body->loadModelFile(fname);
-  remove(fname);
-  
+
+  /*
+    Load model file.
+   */
+
+  char *tmpfname = 0;
+  bool is_ok     = false;
+
+  if (tmpfname = new char(L_tmpnam)) {
+    strncpy(tmpfname, "cnoid_ros_pkgXXXXXX", L_tmpnam);
+
+    if (mkstemp(tmpfname) != -1) {
+      std::ofstream ofs(tmpfname);
+      ofs << model_xml << std::endl;
+      ofs.flush();
+      ofs.close();
+      body->loadModelFile(tmpfname);
+      remove(tmpfname);
+      is_ok = true;
+    }
+
+    delete(tmpfname);
+  }
+
+  if (! is_ok) {
+    return false;
+  }
+
+  /*
+    Spawn model to simulation world.
+   */
+
   body->body()->rootLink()->setTranslation(trans);
   body->body()->rootLink()->setRotation(R.matrix());
   world->addChildItem(body);
