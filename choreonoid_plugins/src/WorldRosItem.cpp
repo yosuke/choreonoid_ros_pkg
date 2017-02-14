@@ -348,7 +348,7 @@ void WorldRosItem::publishLinkStates()
         Link* link = body->body()->link(i);
         link_states.name.push_back(body->name() + "::" + link->name());
         Vector3 pos = link->translation();
-        Quat rot = Quat(link->rotation());
+        Quaternion rot = Quaternion(link->rotation());
         geometry_msgs::Pose pose;
         pose.position.x = pos(0);
         pose.position.y = pos(1);
@@ -385,7 +385,7 @@ void WorldRosItem::publishModelStates()
       model_states.name.push_back(body->name());
       Link* link = body->body()->rootLink();
       Vector3 pos = link->translation();
-      Quat rot = Quat(link->rotation());
+      Quaternion rot = Quaternion(link->rotation());
       geometry_msgs::Pose pose;
       pose.position.x = pos(0);
       pose.position.y = pos(1);
@@ -443,7 +443,7 @@ bool WorldRosItem::spawnModel(gazebo_msgs::SpawnModel::Request &req,
   std::string model_xml = req.model_xml;
 
   cnoid::Vector3 trans;
-  cnoid::Quat R;
+  cnoid::Quaternion R;
   trans(0) = req.initial_pose.position.x;
   trans(1) = req.initial_pose.position.y;
   trans(2) = req.initial_pose.position.z;
