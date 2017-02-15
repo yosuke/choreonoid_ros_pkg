@@ -15,8 +15,6 @@
 #include <cnoid/ItemTreeView>
 #include <cnoid/EigenUtil>
 
-#define DEBUG_CONTACTS_STATE 0
-
 using namespace cnoid;
 
 void WorldRosItem::initialize(ExtensionManager* ext)
@@ -37,8 +35,13 @@ WorldRosItem::WorldRosItem()
 {
   RootItem::instance()->sigTreeChanged().connect(boost::bind(&WorldRosItem::start, this));
 
-  is_csmsg_verbose       = false;
-  publish_cs_update_rate = 100.0;
+  publish_clk_update_rate_ = 100.0;
+  publish_ls_update_rate_  = 100.0;
+  publish_ms_update_rate_  = 100.0;
+  publish_cs_update_rate   = 100.0;
+  is_csmsg_verbose         = false;
+
+  post_dynamics_function_regid.clear();
 
   start();
 }
@@ -48,8 +51,13 @@ WorldRosItem::WorldRosItem(const WorldRosItem& org)
 {
   RootItem::instance()->sigTreeChanged().connect(boost::bind(&WorldRosItem::start, this));
 
-  is_csmsg_verbose       = org.is_csmsg_verbose;
-  publish_cs_update_rate = org.publish_cs_update_rate;
+  publish_clk_update_rate_ = org.publish_clk_update_rate_;
+  publish_ls_update_rate_  = org.publish_ls_update_rate_;
+  publish_ms_update_rate_  = org.publish_ms_update_rate_;
+  publish_cs_update_rate   = org.publish_cs_update_rate;
+  is_csmsg_verbose         = org.is_csmsg_verbose;
+
+  post_dynamics_function_regid.clear();
 
   start();
 }
@@ -61,6 +69,9 @@ WorldRosItem::~WorldRosItem()
 
 bool WorldRosItem::store(Archive& archive)
 {
+  archive.write("publishClockUpdateRate", publish_clk_update_rate_);
+  archive.write("publishLinkStatesUpdateRate", publish_ls_update_rate_);
+  archive.write("publishModelStatesUpdateRate", publish_ms_update_rate_);
   archive.write("publishContactsStateUpdateRate", publish_cs_update_rate);
   archive.write("contactsStateMessagesVerbose", is_csmsg_verbose);
 
@@ -69,6 +80,9 @@ bool WorldRosItem::store(Archive& archive)
 
 bool WorldRosItem::restore(const Archive& archive)
 {
+  archive.read("publishClockUpdateRate", publish_clk_update_rate_);
+  archive.read("publishLinkStatesUpdateRate", publish_ls_update_rate_);
+  archive.read("publishModelStatesUpdateRate", publish_ms_update_rate_);
   archive.read("publishContactsStateUpdateRate", publish_cs_update_rate);
   archive.read("contactsStateMessagesVerbose", is_csmsg_verbose);
 
@@ -82,6 +96,12 @@ Item* WorldRosItem::doDuplicate() const
 
 void WorldRosItem::doPutProperties(PutPropertyFunction& putProperty)
 {
+  putProperty.decimals(2).min(0.0)("Publish clock update rate", publish_clk_update_rate_,
+                                    changeProperty(publish_clk_update_rate_));
+  putProperty.decimals(2).min(0.0)("Publish link states update rate", publish_ls_update_rate_,
+                                    changeProperty(publish_ls_update_rate_));
+  putProperty.decimals(2).min(0.0)("Publish model states update rate", publish_ms_update_rate_,
+                                    changeProperty(publish_ms_update_rate_));
   putProperty.decimals(2).min(0.0)("Publish contacts state update rate", publish_cs_update_rate,
                                     changeProperty(publish_cs_update_rate));
   putProperty("Make contacts state messages verbose", is_csmsg_verbose, changeProperty(is_csmsg_verbose));
@@ -215,9 +235,8 @@ void WorldRosItem::publishContactsState()
 void WorldRosItem::start()
 {
   static bool initialized = false;
-  if (initialized) return;
 
-  sim_func_regid = -1;
+  if (initialized) return;
 
   if (! (world = this->findOwnerItem<WorldItem>())) {
     return;
@@ -232,21 +251,44 @@ void WorldRosItem::start()
   std::replace(name.begin(), name.end(), '-', '_');
   rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(world->name()));
 
-  pub_clock_ = rosnode_->advertise<rosgraph_msgs::Clock>("/clock", 10);
-  pub_link_states_ = rosnode_->advertise<gazebo_msgs::LinkStates>("link_states", 10);
-  pub_model_states_ = rosnode_->advertise<gazebo_msgs::ModelStates>("model_states", 10);
-  TimeBar* timeBar = TimeBar::instance();
-  timeBar->sigTimeChanged().connect(boost::bind(&WorldRosItem::timeTick, this, _1));
+  if (publish_clk_update_rate_ > 0.0 && publish_clk_update_rate_ <= 1000.0) {
+    pub_clock_                   = rosnode_->advertise<rosgraph_msgs::Clock>("/clock", 10);
+    publish_clk_update_interval_ = 1.0 / publish_clk_update_rate_;
+    publish_clk_next_time_       = 0.0;
+
+    post_dynamics_function_regid.push_back(
+      sim->addPostDynamicsFunction(std::bind(&WorldRosItem::publishClock, this)));
+  }
+
+  if (publish_ls_update_rate_ > 0.0 && publish_ls_update_rate_ <= 1000.0) {
+    pub_link_states_            = rosnode_->advertise<gazebo_msgs::LinkStates>("link_states", 10);
+    publish_ls_update_interval_ = 1.0 / publish_ls_update_rate_;
+    publish_ls_next_time_       = 0.0;
+
+    post_dynamics_function_regid.push_back(
+      sim->addPostDynamicsFunction(std::bind(&WorldRosItem::publishLinkStates, this)));
+  }
+
+  if (publish_ms_update_rate_ > 0.0 && publish_ms_update_rate_ <= 1000.0) {
+    pub_model_states_           = rosnode_->advertise<gazebo_msgs::ModelStates>("model_states", 10);
+    publish_ms_update_interval_ = 1.0 / publish_ms_update_rate_;
+    publish_ms_next_time_       = 0.0;
+
+    post_dynamics_function_regid.push_back(
+      sim->addPostDynamicsFunction(std::bind(&WorldRosItem::publishModelStates, this)));
+  }
 
   if (publish_cs_update_rate > 0.0 && publish_cs_update_rate <= 1000.0) {
-    std::string topic_name;
+    std::string topic_name = "/choreonoid/" + world->name() + "/physics/contacts";
+    std::replace(topic_name.begin(), topic_name.end(), '-', '_');
 
-    topic_name                 = "/choreonoid/" + world->name() + "/physics/contacts";
     pub_world_contacts_state_  = rosnode_->advertise<gazebo_msgs::ContactsState>(topic_name, 10);
     sim_access_                = static_cast<WorldRosSimulatorItemAccessor*>(sim.get());
-    sim_func_regid             = sim->addPostDynamicsFunction(std::bind(&WorldRosItem::publishContactsState, this));
     publish_cs_update_interval = 1.0 / publish_cs_update_rate;
     publish_cs_next_time       = 0.0;
+
+    post_dynamics_function_regid.push_back(
+      sim->addPostDynamicsFunction(std::bind(&WorldRosItem::publishContactsState, this)));
 
     AISTSimulatorItem* aist_sim;
 
@@ -321,23 +363,27 @@ void WorldRosItem::start()
   initialized = true;
 }
 
-bool WorldRosItem::timeTick(double t)
+void WorldRosItem::publishClock()
 {
-  publishSimTime();
-  publishLinkStates();
-  publishModelStates();
-  return true;
-}
+  if (publish_clk_next_time_ > sim->currentTime()) {
+    return;
+  }
 
-void WorldRosItem::publishSimTime()
-{
   rosgraph_msgs::Clock ros_time_;
+
   ros_time_.clock.fromSec(sim->currentTime());
   pub_clock_.publish(ros_time_);
+  publish_clk_next_time_ += publish_clk_update_interval_;
+
+  return;
 }
 
 void WorldRosItem::publishLinkStates()
 {
+  if (publish_ls_next_time_ > sim->currentTime()) {
+    return;
+  }
+
   gazebo_msgs::LinkStates link_states;
 
   Item* item = world->childItem();
@@ -372,10 +418,17 @@ void WorldRosItem::publishLinkStates()
     item = item->nextItem();
   }
   pub_link_states_.publish(link_states);
+  publish_ls_next_time_ += publish_ls_update_interval_;
+
+  return;
 }
 
 void WorldRosItem::publishModelStates()
 {
+  if (publish_ms_next_time_ > sim->currentTime()) {
+    return;
+  }
+
   gazebo_msgs::ModelStates model_states;
 
   Item* item = world->childItem();
@@ -408,6 +461,9 @@ void WorldRosItem::publishModelStates()
     item = item->nextItem();
   }
   pub_model_states_.publish(model_states);
+  publish_ms_next_time_ += publish_ms_update_interval_;
+
+  return;
 }
 
 void WorldRosItem::queueThread()
@@ -517,9 +573,9 @@ bool WorldRosItem::deleteModel(gazebo_msgs::DeleteModel::Request &req,
 
 void WorldRosItem::stop()
 {
-  if (sim_func_regid > -1) {
-    sim->removePostDynamicsFunction(sim_func_regid);
-    sim_func_regid = -1;
+  while (! post_dynamics_function_regid.empty()) {
+    sim->removePostDynamicsFunction(post_dynamics_function_regid.back());
+    post_dynamics_function_regid.pop_back();
   }
 
   if (ros::ok()) {
