@@ -17,6 +17,12 @@
 
 using namespace cnoid;
 
+/*
+  Namepsace of parent of topics and services.
+  NOTE: If you renaming, do not include '-'.
+ */
+const static std::string cnoidrospkg_parent_namespace_ = "choreonoid";
+
 void WorldRosItem::initialize(ExtensionManager* ext)
 {
   static bool initialized = false;
@@ -246,10 +252,9 @@ void WorldRosItem::start()
   sim = SimulatorItem::findActiveSimulatorItemFor(this);
   if (sim == 0) return;
   
-  std::string name = sim->name();
-  ROS_DEBUG("Found SimulatorItem: %s", name.c_str());
-  std::replace(name.begin(), name.end(), '-', '_');
-  rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(world->name()));
+  ROS_DEBUG("Found SimulatorItem: %s", sim->name().c_str());
+
+  rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(cnoidrospkg_parent_namespace_));
 
   if (publish_clk_update_rate_ > 0.0 && publish_clk_update_rate_ <= 1000.0) {
     pub_clock_                   = rosnode_->advertise<rosgraph_msgs::Clock>("/clock", 10);
@@ -279,7 +284,7 @@ void WorldRosItem::start()
   }
 
   if (publish_cs_update_rate > 0.0 && publish_cs_update_rate <= 1000.0) {
-    std::string topic_name = "/choreonoid/" + world->name() + "/physics/contacts";
+    std::string topic_name = world->name() + "/physics/contacts";
     std::replace(topic_name.begin(), topic_name.end(), '-', '_');
 
     pub_world_contacts_state_  = rosnode_->advertise<gazebo_msgs::ContactsState>(topic_name, 10);

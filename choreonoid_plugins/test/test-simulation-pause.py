@@ -4,7 +4,7 @@ import time
 import rospy
 from std_srvs.srv import Empty
 
-ns = '/AISTSimulator/'
+ns = '/choreonoid/'
 
 def pause():
     rospy.wait_for_service(ns + 'pause_physics')
