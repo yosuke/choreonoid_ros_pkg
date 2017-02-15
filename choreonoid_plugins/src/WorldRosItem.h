@@ -67,7 +67,7 @@ public:
 typedef ref_ptr<WorldRosSimulatorItemAccessor> WorldRosSimulatorItemAccessorPtr;
 
 /**
-   @brief
+   @brief This class is provides all services and some topics (link state, model state, contact state).
  */
 class CNOID_EXPORT WorldRosItem : public Item
 {
@@ -98,8 +98,31 @@ private:
     ros::CallbackQueue rosqueue_;
     boost::shared_ptr<boost::thread> rosqueue_thread_;
 
-    bool timeTick(double);
-    void publishSimTime();
+    /// The registration id of calling function from physics engine. (physics engine is SimulatorItem's subclass)
+    std::list<int> post_dynamics_function_regid;
+
+    /// Update rate for publish clock.
+    double publish_clk_update_rate_;
+    /// Update interval for publish clock.
+    double publish_clk_update_interval_;
+    /// Publish next time for clock.
+    double publish_clk_next_time_;
+
+    /// Update rate for publish link states.
+    double publish_ls_update_rate_;
+    /// Update interval for publish link states.
+    double publish_ls_update_interval_;
+    /// Publish next time for link states.
+    double publish_ls_next_time_;
+
+    /// Update rate for publish model states.
+    double publish_ms_update_rate_;
+    /// Update interval for publish model states.
+    double publish_ms_update_interval_;
+    /// Publish next time for model states.
+    double publish_ms_next_time_;
+
+    void publishClock();
     void publishLinkStates();
     void publishModelStates();
     void queueThread();
@@ -127,8 +150,6 @@ private:
 
     /// Publisher of world contacts state. (link collisions pair)
     ros::Publisher pub_world_contacts_state_;
-    /// The registration id of calling function from physics engine. (physics engine is SimulatorItem's subclass)
-    int sim_func_regid;
     /// For getting collision data.
     WorldRosSimulatorItemAccessor* sim_access_;
 
