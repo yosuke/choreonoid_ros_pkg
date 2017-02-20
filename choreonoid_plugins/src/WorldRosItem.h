@@ -80,7 +80,7 @@ public:
 
     virtual bool store(Archive& archive);
     virtual bool restore(const Archive& archive);
-    
+
     void start();
     void stop();
     
@@ -98,8 +98,27 @@ private:
     ros::CallbackQueue rosqueue_;
     boost::shared_ptr<boost::thread> rosqueue_thread_;
 
+    /**
+       The variable for managing registration to the simulator item.
+       This registration that function of node creation at the simulation start,
+       node deletion at the simulation stop.
+     */
+    std::map<SimulatorItemPtr, std::string> registration_node_management_;
+
     /// The registration id of calling function from physics engine. (physics engine is SimulatorItem's subclass)
     std::list<int> post_dynamics_function_regid;
+
+    void queueThread();
+
+    /**
+      @brief Connect to event signal, function of nodes creation and deletion.
+      The event signal is 'RootItem::instace()->sigTreeChanged()'.
+     */
+    void registrationNodeStartAndStop();
+
+    /*
+      For services and topics.
+     */
 
     /// Update rate for publish clock.
     double publish_clk_update_rate_;
@@ -125,7 +144,6 @@ private:
     void publishClock();
     void publishLinkStates();
     void publishModelStates();
-    void queueThread();
     bool resetSimulation(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
     bool pausePhysics(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
     bool unpausePhysics(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
@@ -145,7 +163,7 @@ private:
     ros::ServiceServer delete_model_service_;
 
     /*
-      For Publish collision data. (contacts state)
+      For publish collision data. (contacts state)
      */
 
     /// Publisher of world contacts state. (link collisions pair)
