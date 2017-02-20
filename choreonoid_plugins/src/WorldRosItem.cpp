@@ -17,6 +17,8 @@
 
 using namespace cnoid;
 
+#define DEBUG_WORLDROSITEM 0
+
 /*
   Namepsace of parent of topics and services.
   NOTE: If you renaming, do not include '-'.
@@ -39,33 +41,31 @@ void WorldRosItem::initialize(ExtensionManager* ext)
 
 WorldRosItem::WorldRosItem()
 {
-  RootItem::instance()->sigTreeChanged().connect(boost::bind(&WorldRosItem::start, this));
-
   publish_clk_update_rate_ = 100.0;
   publish_ls_update_rate_  = 100.0;
   publish_ms_update_rate_  = 100.0;
   publish_cs_update_rate   = 100.0;
   is_csmsg_verbose         = false;
 
+  registration_node_management_.clear();
   post_dynamics_function_regid.clear();
 
-  start();
+  RootItem::instance()->sigTreeChanged().connect(boost::bind(&WorldRosItem::registrationNodeStartAndStop, this));
 }
 
 WorldRosItem::WorldRosItem(const WorldRosItem& org)
   : Item(org)
 {
-  RootItem::instance()->sigTreeChanged().connect(boost::bind(&WorldRosItem::start, this));
-
   publish_clk_update_rate_ = org.publish_clk_update_rate_;
   publish_ls_update_rate_  = org.publish_ls_update_rate_;
   publish_ms_update_rate_  = org.publish_ms_update_rate_;
   publish_cs_update_rate   = org.publish_cs_update_rate;
   is_csmsg_verbose         = org.is_csmsg_verbose;
 
+  registration_node_management_.clear();
   post_dynamics_function_regid.clear();
 
-  start();
+  RootItem::instance()->sigTreeChanged().connect(boost::bind(&WorldRosItem::registrationNodeStartAndStop, this));
 }
 
 WorldRosItem::~WorldRosItem()
@@ -238,20 +238,47 @@ void WorldRosItem::publishContactsState()
   return;
 }
 
+void WorldRosItem::registrationNodeStartAndStop()
+{
+  WorldItemPtr parent;
+  std::map<SimulatorItemPtr, std::string>::iterator it;
+
+  if (! (parent = this->findOwnerItem<WorldItem>())) {
+    return;
+  }
+
+  for (Item* child = parent->childItem(); child; child = child->nextItem()) {
+    SimulatorItemPtr p = dynamic_cast<SimulatorItem*>(child);
+
+    if (p && ! p->isRunning()) {
+      it = registration_node_management_.find(p);
+
+      if (it == registration_node_management_.end()) {
+        p->sigSimulationStarted().connect(std::bind(&WorldRosItem::start, this));
+        p->sigSimulationFinished().connect(std::bind(&WorldRosItem::stop, this));
+
+        registration_node_management_[p] = p->name();
+#if (DEBUG_WORLDROSITEM > 0)
+        std::cout << registration_node_management_[p] << ": regsitered" << std::endl;
+      } else {
+        std::cout << it->second << ": already registered" << std::endl;
+#endif  /* (DEBUG_WORLDROSITEM > 0) */
+      }
+    }
+  }
+
+  return;
+}
+
 void WorldRosItem::start()
 {
-  static bool initialized = false;
-
-  if (initialized) return;
-
   if (! (world = this->findOwnerItem<WorldItem>())) {
+    return;
+  } else if (! (sim = SimulatorItem::findActiveSimulatorItemFor(this))) {
     return;
   }
 
   ROS_DEBUG("Found WorldItem: %s", world->name().c_str());
-  sim = SimulatorItem::findActiveSimulatorItemFor(this);
-  if (sim == 0) return;
-  
   ROS_DEBUG("Found SimulatorItem: %s", sim->name().c_str());
 
   rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(cnoidrospkg_parent_namespace_));
@@ -364,8 +391,6 @@ void WorldRosItem::start()
   async_ros_spin_->start();
 
   rosqueue_thread_.reset(new boost::thread(&WorldRosItem::queueThread, this));
-
-  initialized = true;
 }
 
 void WorldRosItem::publishClock()
@@ -600,6 +625,8 @@ void WorldRosItem::stop()
   if (rosqueue_thread_) {
     rosqueue_thread_->join();
   }
+
+  registration_node_management_.clear();
 
   return;
 }
