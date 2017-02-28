@@ -545,26 +545,22 @@ bool WorldRosItem::spawnModel(gazebo_msgs::SpawnModel::Request &req,
     Load model file.
    */
 
-  char *tmpfname = 0;
-  bool is_ok     = false;
+  char tmpfname[L_tmpnam];
+  bool is_loaded = false;
 
-  if (tmpfname = new char(L_tmpnam)) {
-    strncpy(tmpfname, "cnoid_ros_pkgXXXXXX", L_tmpnam);
+  memset(tmpfname, 0x00, sizeof(tmpfname));
+  strncpy(tmpfname, "cnoid_ros_pkgXXXXXX", sizeof(tmpfname));
 
-    if (mkstemp(tmpfname) != -1) {
-      std::ofstream ofs(tmpfname);
-      ofs << model_xml << std::endl;
-      ofs.flush();
-      ofs.close();
-      body->loadModelFile(tmpfname);
-      remove(tmpfname);
-      is_ok = true;
-    }
-
-    delete(tmpfname);
+  if (mkstemp(tmpfname) != -1) {
+    std::ofstream ofs(tmpfname);
+    ofs << model_xml << std::endl;
+    ofs.flush();
+    ofs.close();
+    is_loaded = body->loadModelFile(tmpfname);
+    remove(tmpfname);
   }
 
-  if (! is_ok) {
+  if (! is_loaded) {
     return false;
   }
 
