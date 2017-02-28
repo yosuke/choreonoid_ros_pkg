@@ -11,6 +11,12 @@ endif()
 
 project(choreonoid_plugins)
 
+# NOTE: if you chosen the CMake build type with not set optimize option of compiler,
+# the depth camera device process very slowly.
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 find_package(catkin REQUIRED COMPONENTS 
   choreonoid_ros
   message_generation 
