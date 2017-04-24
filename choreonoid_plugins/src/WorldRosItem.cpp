@@ -324,7 +324,7 @@ void WorldRosItem::start()
 
     AISTSimulatorItem* aist_sim;
 
-    if ((aist_sim = static_cast<AISTSimulatorItem*>(sim.get()))) {
+    if ((aist_sim = dynamic_cast<AISTSimulatorItem*>(sim.get()))) {
       aist_sim->setConstraintForceOutputEnabled(true);
     }
 
