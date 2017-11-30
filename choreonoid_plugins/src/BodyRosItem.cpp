@@ -337,11 +337,11 @@ void BodyRosItem::updateRangeSensor(RangeSensor* sensor, ros::Publisher& publish
   if (sensor->yawRange() == 0.0) {
     range.angle_max = sensor->pitchRange()/2.0;
     range.angle_min = -sensor->pitchRange()/2.0;
-    range.angle_increment = sensor->pitchRange() / ((double)sensor->pitchResolution());
+    range.angle_increment = sensor->pitchRange() / ((double)sensor->pitchStep());
   } else {
     range.angle_max = sensor->yawRange()/2.0;
     range.angle_min = -sensor->yawRange()/2.0;
-    range.angle_increment = sensor->yawRange() / ((double)sensor->yawResolution());
+    range.angle_increment = sensor->yawRange() / ((double)sensor->yawStep());
   }
   range.ranges.resize(sensor->rangeData().size());
   //range.intensities.resize(sensor->rangeData().size());
