@@ -37,7 +37,8 @@ public:
     virtual ~BodyRosItem();
     bool createSensors(BodyPtr body);
     
-    virtual bool start(Target* target);
+    virtual bool initialize(Target* target);
+    virtual bool start();
     virtual double timeStep() const {
       return timeStep_;
     };

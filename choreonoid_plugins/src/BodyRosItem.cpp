@@ -65,7 +65,7 @@ void BodyRosItem::doPutProperties(PutPropertyFunction& putProperty)
   putProperty.decimals(2).min(0.0)("Update rate", joint_state_update_rate_, changeProperty(joint_state_update_rate_));
 }
 
-bool BodyRosItem::start(Target* target)
+bool BodyRosItem::initialize(Target* target)
 {
   if (! target) {
     MessageView::instance()->putln(MessageView::ERROR, boost::format("Target not found"));
@@ -80,6 +80,11 @@ bool BodyRosItem::start(Target* target)
   timeStep_ = target->worldTimeStep();
   controlTime_ = target->currentTime();
 
+  return true;
+}
+
+bool BodyRosItem::start()
+{
   // buffer of preserve currently state of joints.
   joint_state_.header.stamp.fromSec(controlTime_);
   joint_state_.name.resize(body()->numJoints());
@@ -337,11 +342,11 @@ void BodyRosItem::updateRangeSensor(RangeSensor* sensor, ros::Publisher& publish
   if (sensor->yawRange() == 0.0) {
     range.angle_max = sensor->pitchRange()/2.0;
     range.angle_min = -sensor->pitchRange()/2.0;
-    range.angle_increment = sensor->pitchRange() / ((double)sensor->pitchStep());
+    range.angle_increment = sensor->pitchStep();
   } else {
     range.angle_max = sensor->yawRange()/2.0;
     range.angle_min = -sensor->yawRange()/2.0;
-    range.angle_increment = sensor->yawRange() / ((double)sensor->yawStep());
+    range.angle_increment = sensor->yawStep();
   }
   range.ranges.resize(sensor->rangeData().size());
   //range.intensities.resize(sensor->rangeData().size());

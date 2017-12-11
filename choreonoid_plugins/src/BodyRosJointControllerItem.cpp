@@ -67,10 +67,8 @@ bool BodyRosJointControllerItem::hook_of_start_at_after_creation_rosnode()
   return true;
 }
 
-bool BodyRosJointControllerItem::start(Target* target)
+bool BodyRosJointControllerItem::initialize(Target* target)
 {
-  std::string topic_name;
-
   if (! target) {
     MessageView::instance()->putln(MessageView::ERROR, boost::format("Target not found"));
     return false;
@@ -89,6 +87,11 @@ bool BodyRosJointControllerItem::start(Target* target)
   timeStep_        = target->worldTimeStep();
   controlTime_     = target->currentTime();
 
+  return true;
+}
+
+bool BodyRosJointControllerItem::start()
+{
   for (size_t i = 0; i < body()->numJoints(); i++) {
     Link* joint = body()->joint(i);
 
@@ -103,6 +106,8 @@ bool BodyRosJointControllerItem::start(Target* target)
   }
 
   rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(name));
+
+  std::string topic_name;
 
   topic_name                 = control_mode_name_ + "/set_joint_trajectory";
   joint_state_subscriber_    = rosnode_->subscribe(
