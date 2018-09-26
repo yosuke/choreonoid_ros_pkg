@@ -44,4 +44,4 @@ before_script:
   - source /opt/ros/$ROS_DISTRO/setup.bash  
 script:
   - cd ~/ros/ws_$REPOSITORY_NAME
-  - catkin build -p 1 choreonoid_ros_pkg
+  - catkin build --interleave -p 1 choreonoid_ros_pkg
