@@ -87,6 +87,7 @@ following libraries:
   <build_depend>eigen</build_depend>
   <build_depend>qtbase5-dev</build_depend>
   <build_depend>libqt5-opengl-dev</build_depend>
+  <build_depend>libqt5x11extras5-dev</build_depend>
   <build_depend>qt5-qmake</build_depend>
   <build_depend>assimp-dev</build_depend>
   <build_depend>libglew-dev</build_depend>
