@@ -94,13 +94,10 @@ private:
     WorldItemPtr world;
     SimulatorItemPtr sim;
     boost::shared_ptr<ros::NodeHandle> rosnode_;
-    ros::CallbackQueue rosqueue_;
-    boost::shared_ptr<boost::thread> rosqueue_thread_;
+    boost::shared_ptr<ros::AsyncSpinner> async_ros_spin_;
 
     /// The registration id of calling function from physics engine. (physics engine is SimulatorItem's subclass)
     int post_dynamics_function_regid;
-
-    void queueThread();
 
     std::map<std::string, bool> hooked_simulators_;
 

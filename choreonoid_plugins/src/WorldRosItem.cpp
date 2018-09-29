@@ -328,7 +328,7 @@ void WorldRosItem::start()
     ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
                                                           pause_physics_service_name,
                                                           boost::bind(&WorldRosItem::pausePhysics,this,_1,_2),
-                                                          ros::VoidPtr(), &rosqueue_);
+                                                          ros::VoidPtr(), ros::getGlobalCallbackQueue());
   pause_physics_service_ = rosnode_->advertiseService(pause_physics_aso);
 
   std::string unpause_physics_service_name("unpause_physics");
@@ -336,7 +336,7 @@ void WorldRosItem::start()
     ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
                                                           unpause_physics_service_name,
                                                           boost::bind(&WorldRosItem::unpausePhysics,this,_1,_2),
-                                                          ros::VoidPtr(), &rosqueue_);
+                                                          ros::VoidPtr(), ros::getGlobalCallbackQueue());
   unpause_physics_service_ = rosnode_->advertiseService(unpause_physics_aso);
 
   std::string reset_simulation_service_name("reset_simulation");
@@ -344,7 +344,7 @@ void WorldRosItem::start()
     ros::AdvertiseServiceOptions::create<std_srvs::Empty>(
                                                           reset_simulation_service_name,
                                                           boost::bind(&WorldRosItem::resetSimulation,this,_1,_2),
-                                                          ros::VoidPtr(), &rosqueue_);
+                                                          ros::VoidPtr(), ros::getGlobalCallbackQueue());
   reset_simulation_service_ = rosnode_->advertiseService(reset_simulation_aso);
 
   std::string spawn_vrml_model_service_name("spawn_vrml_model");
@@ -352,7 +352,7 @@ void WorldRosItem::start()
     ros::AdvertiseServiceOptions::create<gazebo_msgs::SpawnModel>(
                                                                   spawn_vrml_model_service_name,
                                                                   boost::bind(&WorldRosItem::spawnModel,this,_1,_2),
-                                                                  ros::VoidPtr(), &rosqueue_);
+                                                                  ros::VoidPtr(), ros::getGlobalCallbackQueue());
   spawn_vrml_model_service_ = rosnode_->advertiseService(spawn_vrml_model_aso);
 
   std::string spawn_urdf_model_service_name("spawn_urdf_model");
@@ -360,7 +360,7 @@ void WorldRosItem::start()
     ros::AdvertiseServiceOptions::create<gazebo_msgs::SpawnModel>(
                                                                   spawn_urdf_model_service_name,
                                                                   boost::bind(&WorldRosItem::spawnModel,this,_1,_2),
-                                                                  ros::VoidPtr(), &rosqueue_);
+                                                                  ros::VoidPtr(), ros::getGlobalCallbackQueue());
   spawn_urdf_model_service_ = rosnode_->advertiseService(spawn_urdf_model_aso);
 
   std::string spawn_sdf_model_service_name("spawn_sdf_model");
@@ -368,7 +368,7 @@ void WorldRosItem::start()
     ros::AdvertiseServiceOptions::create<gazebo_msgs::SpawnModel>(
                                                                   spawn_sdf_model_service_name,
                                                                   boost::bind(&WorldRosItem::spawnModel,this,_1,_2),
-                                                                  ros::VoidPtr(), &rosqueue_);
+                                                                  ros::VoidPtr(), ros::getGlobalCallbackQueue());
   spawn_sdf_model_service_ = rosnode_->advertiseService(spawn_sdf_model_aso);
 
   std::string delete_model_service_name("delete_model");
@@ -376,10 +376,11 @@ void WorldRosItem::start()
     ros::AdvertiseServiceOptions::create<gazebo_msgs::DeleteModel>(
                                                                    delete_model_service_name,
                                                                    boost::bind(&WorldRosItem::deleteModel,this,_1,_2),
-                                                                   ros::VoidPtr(), &rosqueue_);
+                                                                   ros::VoidPtr(), ros::getGlobalCallbackQueue());
   delete_model_service_ = rosnode_->advertiseService(delete_aso);
 
-  rosqueue_thread_.reset(new boost::thread(&WorldRosItem::queueThread, this));
+  async_ros_spin_.reset(new ros::AsyncSpinner(0));
+  async_ros_spin_->start();
 }
 
 void WorldRosItem::onPostDynamics()
@@ -388,7 +389,6 @@ void WorldRosItem::onPostDynamics()
   if (publish_ls_update_rate_ > 0.0) publishLinkStates();
   if (publish_ms_update_rate_ > 0.0) publishModelStates();
   if (publish_cs_update_rate > 0.0) publishContactsState();
-  ros::spinOnce();
 }
 
 void WorldRosItem::publishClock()
@@ -494,14 +494,6 @@ void WorldRosItem::publishModelStates()
   return;
 }
 
-void WorldRosItem::queueThread()
-{
-  static const double timeout = 0.001;
-  while (rosnode_->ok()) {
-    rosqueue_.callAvailable(ros::WallDuration(timeout));
-  }
-}
-
 bool WorldRosItem::pausePhysics(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
   sim->pauseSimulation();
@@ -597,17 +589,13 @@ void WorldRosItem::stop()
   }
 
   if (ros::ok()) {
-    if (rosqueue_.isEnabled()) {
-      rosqueue_.clear();
+    if (async_ros_spin_) {
+      async_ros_spin_->stop();
     }
 
     if (rosnode_) {
       rosnode_->shutdown();
     }
-  }
-
-  if (rosqueue_thread_) {
-    rosqueue_thread_->join();
   }
 
   return;
