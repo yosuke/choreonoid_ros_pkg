@@ -132,7 +132,7 @@ bool BodyRosItem::createSensors(BodyPtr body)
   force_sensor_publishers_.resize(forceSensors_.size());
   for (size_t i=0; i < forceSensors_.size(); ++i) {
     if (ForceSensor* sensor = forceSensors_[i]) {
-      force_sensor_publishers_[i] = rosnode_->advertise<geometry_msgs::Wrench>(sensor->name(), 1);
+      force_sensor_publishers_[i] = rosnode_->advertise<geometry_msgs::WrenchStamped>(sensor->name(), 1);
       sensor->sigStateChanged().connect(boost::bind(&BodyRosItem::updateForceSensor,
                                                     this, sensor, force_sensor_publishers_[i]));
       ROS_DEBUG("Create force sensor %s with cycle %f", sensor->name().c_str(), sensor->cycle());
@@ -212,13 +212,15 @@ bool BodyRosItem::control()
 
 void BodyRosItem::updateForceSensor(ForceSensor* sensor, ros::Publisher& publisher)
 {
-  geometry_msgs::Wrench force;
-  force.force.x = sensor->F()[0];
-  force.force.y = sensor->F()[1];
-  force.force.z = sensor->F()[2];
-  force.torque.x = sensor->F()[3];
-  force.torque.y = sensor->F()[4];
-  force.torque.z = sensor->F()[5];
+  geometry_msgs::WrenchStamped force;
+  force.header.stamp.fromSec(controllerTarget->currentTime());
+  force.header.frame_id = sensor->name();
+  force.wrench.force.x = sensor->F()[0];
+  force.wrench.force.y = sensor->F()[1];
+  force.wrench.force.z = sensor->F()[2];
+  force.wrench.torque.x = sensor->F()[3];
+  force.wrench.torque.y = sensor->F()[4];
+  force.wrench.torque.z = sensor->F()[5];
   publisher.publish(force);
 }
 
