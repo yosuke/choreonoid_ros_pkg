@@ -41,8 +41,8 @@ void WorldRosItem::initialize(ExtensionManager* ext)
 WorldRosItem::WorldRosItem()
 {
   publish_clk_update_rate_ = 100.0;
-  publish_ls_update_rate_  = 10.0;
-  publish_ms_update_rate_  = 10.0;
+  publish_ls_update_rate_  = 0.0;
+  publish_ms_update_rate_  = 0.0;
   publish_cs_update_rate   = 0.0;
   is_csmsg_verbose         = false;
 
