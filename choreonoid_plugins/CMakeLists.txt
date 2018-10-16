@@ -226,5 +226,5 @@ install(
 )
 
 if(ENABLE_PYTHON)
-  add_subdirectory(src/python)
+#  add_subdirectory(src/python)
 endif()
